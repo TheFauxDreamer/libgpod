@@ -1,3 +1,5 @@
+# WARNING CHANGES NOT TESTED
+
 libgpod is a library meant to abstract access to an iPod content. It
 provides an easy to use API to retrieve the list of files and playlist
 stored on an iPod, to modify them and to save them back to the iPod.
