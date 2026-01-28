@@ -152,7 +152,7 @@ itdb_artwork_set_thumbnail (Itdb_Artwork *artwork,
 {
 #ifdef HAVE_GDKPIXBUF
 /* This operation doesn't make sense when we can't save thumbnail files */
-    struct stat statbuf;
+    GStatBuf statbuf;
     Itdb_Thumb *thumb;
 
     g_return_val_if_fail (artwork, FALSE);

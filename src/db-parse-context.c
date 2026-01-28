@@ -174,7 +174,7 @@ db_parse_context_new_from_file (const char *filename, Itdb_DB *db)
 	Itdb_Device *device;
 	GError* error;
 	GMappedFile* mapped_file;
-	struct stat stat_buf;
+	GStatBuf stat_buf;
 
 	ctx = NULL;
 	error = NULL;
