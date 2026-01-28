@@ -121,7 +121,7 @@ static int do_dump (int argc, char **argv)
 
     if (!g_file_test (argv[3], G_FILE_TEST_EXISTS))
     {
-	if (mkdir (argv[3], 0777) == -1)
+	if (g_mkdir (argv[3], 0777) == -1)
 	{
 	    g_print (_("Error creating '%s' (mkdir)\n"), argv[3]);
 	    return 1;
