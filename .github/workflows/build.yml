@@ -250,6 +250,14 @@ jobs:
             --disable-udev \
             --without-libimobiledevice
 
+      - name: Fix gmodule linkage
+        run: |
+          # itdb_hashAB.c uses g_module_open/g_module_symbol from gmodule-2.0
+          # but configure.ac only links glib-2.0 + gobject-2.0. Windows does not
+          # resolve these transitively. Append gmodule-2.0 to LIBGPOD_LIBS.
+          GMODULE_LIBS="$(pkg-config --libs gmodule-2.0)"
+          sed -i "s|^LIBGPOD_LIBS = \\(.*\\)|LIBGPOD_LIBS = \\1 ${GMODULE_LIBS}|" src/Makefile
+
       - name: Build
         run: make -j$(nproc)
 
