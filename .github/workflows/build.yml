@@ -83,10 +83,17 @@ jobs:
             autoconf \
             libtool \
             gettext \
-            pkg-config
-          # Ensure gettext and keg-only tools are on PATH
+            pkg-config \
+            perl \
+            expat
+          # intltool requires XML::Parser perl module; expat headers needed to build it
+          EXPAT_PREFIX="$(brew --prefix expat)"
+          PERL_MM_USE_DEFAULT=1 CPATH="$EXPAT_PREFIX/include" LIBRARY_PATH="$EXPAT_PREFIX/lib" \
+            $(brew --prefix perl)/bin/cpan XML::Parser
+          # Ensure gettext, libtool, and perl are on PATH
           echo "$(brew --prefix gettext)/bin" >> $GITHUB_PATH
           echo "$(brew --prefix libtool)/bin" >> $GITHUB_PATH
+          echo "$(brew --prefix perl)/bin" >> $GITHUB_PATH
           # libplist 2.x ships libplist-2.0.pc but configure.ac expects libplist.pc
           PLIST_PC="$(brew --prefix libplist)/lib/pkgconfig"
           if [ -d "$PLIST_PC" ] && [ ! -f "$PLIST_PC/libplist.pc" ]; then
