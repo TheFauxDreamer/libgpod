@@ -30,6 +30,7 @@
 #include <string.h>
 #include <gdk-pixbuf/gdk-pixbuf.h>
 #include <glib/gi18n-lib.h>
+#include <glib/gstdio.h>
 
 static void usage (int argc, char **argv)
 {
