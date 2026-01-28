@@ -61,6 +61,11 @@ jobs:
             automake \
             libtool \
             pkg-config
+          # libplist 2.x ships libplist-2.0.pc but configure.ac expects libplist.pc
+          PLIST_PC=$(pkg-config --variable=pcfiledir libplist-2.0 2>/dev/null || true)
+          if [ -n "$PLIST_PC" ] && [ ! -f "$PLIST_PC/libplist.pc" ]; then
+            sudo ln -s "$PLIST_PC/libplist-2.0.pc" "$PLIST_PC/libplist.pc"
+          fi
 
       - name: Install system dependencies (macOS)
         if: startsWith(matrix.os, 'macos')
@@ -74,14 +79,19 @@ jobs:
             swig \
             intltool \
             gtk-doc \
-            gnome-common \
             automake \
             autoconf \
             libtool \
             gettext \
             pkg-config
-          # Ensure gettext tools are on PATH (brew keg-only)
+          # Ensure gettext and keg-only tools are on PATH
           echo "$(brew --prefix gettext)/bin" >> $GITHUB_PATH
+          echo "$(brew --prefix libtool)/bin" >> $GITHUB_PATH
+          # libplist 2.x ships libplist-2.0.pc but configure.ac expects libplist.pc
+          PLIST_PC="$(brew --prefix libplist)/lib/pkgconfig"
+          if [ -d "$PLIST_PC" ] && [ ! -f "$PLIST_PC/libplist.pc" ]; then
+            ln -s "$PLIST_PC/libplist-2.0.pc" "$PLIST_PC/libplist.pc"
+          fi
 
       - name: Generate build system
         run: autoreconf -fi
