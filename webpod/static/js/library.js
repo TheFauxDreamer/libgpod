@@ -2,6 +2,16 @@
  * WebPod - Library Panel
  * Album and track browsing, scanning
  */
+
+// Inline SVG placeholder - no external file needed
+var PLACEHOLDER_IMG = 'data:image/svg+xml,' + encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">' +
+    '<rect fill="#333" width="100" height="100"/>' +
+    '<circle cx="50" cy="50" r="30" fill="none" stroke="#555" stroke-width="4"/>' +
+    '<circle cx="50" cy="50" r="10" fill="#555"/>' +
+    '</svg>'
+);
+
 var Library = {
     selectedTrackIds: [],
     lastSelectedIndex: -1,
@@ -39,11 +49,11 @@ var Library = {
                 if (album.artwork_hash) {
                     img.src = '/api/artwork/' + album.artwork_hash;
                 } else {
-                    img.src = '/static/img/placeholder.svg';
+                    img.src = PLACEHOLDER_IMG;
                 }
                 img.alt = album.album || 'Unknown Album';
                 img.onerror = function() {
-                    this.src = '/static/img/placeholder.svg';
+                    this.src = PLACEHOLDER_IMG;
                 };
 
                 var info = document.createElement('div');
