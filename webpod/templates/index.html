@@ -53,6 +53,7 @@
                     <ul id="playlists-list"></ul>
                     <div class="sidebar-actions">
                         <button id="new-playlist-btn" class="btn btn-small">+ New Playlist</button>
+                        <button id="import-m3u-btn" class="btn btn-small">Import M3U</button>
                     </div>
                 </div>
             </div>
@@ -66,6 +67,16 @@
                     <button id="view-albums" class="btn btn-tab active">Albums</button>
                     <button id="view-tracks" class="btn btn-tab">Tracks</button>
                     <button id="view-ipod-tracks" class="btn btn-tab">iPod Tracks</button>
+                </div>
+                <div class="toolbar-center">
+                    <div id="add-to-playlist-container" class="dropdown-container hidden">
+                        <button id="add-to-playlist-btn" class="btn btn-primary btn-small">Add to Playlist</button>
+                        <div id="playlist-dropdown" class="dropdown-menu hidden">
+                            <div class="dropdown-item" data-action="new">+ Create New Playlist</div>
+                            <div class="dropdown-divider"></div>
+                            <div id="playlist-dropdown-list"></div>
+                        </div>
+                    </div>
                 </div>
                 <div class="toolbar-right">
                     <input type="text" id="search-input" placeholder="Search..." />
@@ -145,6 +156,24 @@
             <div class="dialog-actions">
                 <button id="playlist-cancel" class="btn">Cancel</button>
                 <button id="playlist-confirm" class="btn btn-primary">Create</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- M3U Import Dialog -->
+    <div id="m3u-dialog" class="dialog-overlay hidden">
+        <div class="dialog dialog-wide">
+            <h3>Import M3U Playlist</h3>
+            <p>Enter the path to your .m3u or .m3u8 file:</p>
+            <input type="text" id="m3u-path-input" placeholder="/path/to/playlist.m3u" />
+            <div id="m3u-results" class="hidden">
+                <div id="m3u-stats"></div>
+                <div id="m3u-tracks-list"></div>
+            </div>
+            <div class="dialog-actions">
+                <button id="m3u-cancel" class="btn">Cancel</button>
+                <button id="m3u-import" class="btn btn-primary">Load Playlist</button>
+                <button id="m3u-add-to-ipod" class="btn btn-primary hidden">Add to iPod</button>
             </div>
         </div>
     </div>

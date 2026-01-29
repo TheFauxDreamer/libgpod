@@ -231,6 +231,25 @@ var Library = {
                 row.classList.remove('selected');
             }
         });
+
+        // Show/hide "Add to Playlist" button based on selection
+        var container = document.getElementById('add-to-playlist-container');
+        if (container) {
+            if (Library.selectedTrackIds.length > 0 && IPod.connected) {
+                container.classList.remove('hidden');
+            } else {
+                container.classList.add('hidden');
+            }
+        }
+    },
+
+    /**
+     * Clear track selection
+     */
+    clearSelection: function() {
+        Library.selectedTrackIds = [];
+        Library.lastSelectedIndex = -1;
+        Library.updateTrackSelection();
     },
 
     /**

@@ -94,6 +94,42 @@ def library_albums():
     return jsonify({"albums": albums})
 
 
+@app.route('/api/library/import-m3u', methods=['POST'])
+def library_import_m3u():
+    """Import an M3U/M3U8 playlist file and match tracks to library."""
+    from .m3u_parser import parse_m3u, match_tracks_to_library
+
+    data = request.get_json()
+    file_path = data.get('path', '').strip()
+
+    if not file_path:
+        return jsonify({"error": "No file path provided"}), 400
+
+    if not os.path.isfile(file_path):
+        return jsonify({"error": f"File not found: {file_path}"}), 404
+
+    # Parse M3U file
+    m3u_tracks = parse_m3u(file_path)
+    if not m3u_tracks:
+        return jsonify({"error": "No tracks found in playlist file"}), 400
+
+    # Get all library tracks for matching
+    library_tracks = models.get_all_tracks_for_matching()
+
+    # Match M3U paths to library
+    matched_ids, unmatched_paths = match_tracks_to_library(m3u_tracks, library_tracks)
+
+    # Get full track info for matched tracks
+    matched_tracks = models.get_tracks_by_ids(matched_ids) if matched_ids else []
+
+    return jsonify({
+        "matched_tracks": matched_tracks,
+        "matched_count": len(matched_ids),
+        "unmatched_count": len(unmatched_paths),
+        "unmatched_paths": unmatched_paths[:20]  # Limit to first 20 for UI
+    })
+
+
 @app.route('/api/artwork/<artwork_hash>')
 def serve_artwork(artwork_hash):
     path = get_artwork_path(artwork_hash)

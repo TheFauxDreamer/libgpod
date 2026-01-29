@@ -167,6 +167,14 @@ def get_tracks_by_ids(track_ids):
     return [dict(r) for r in rows]
 
 
+def get_all_tracks_for_matching():
+    """Get all tracks with id and filepath for M3U matching."""
+    conn = get_db()
+    rows = conn.execute("SELECT id, filepath FROM library_tracks").fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
 def get_track_count():
     """Get total number of tracks in library."""
     conn = get_db()
