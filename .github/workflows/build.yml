@@ -293,6 +293,11 @@ jobs:
       contents: write
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
@@ -304,6 +309,7 @@ jobs:
           GH_REPO: ${{ github.repository }}
         run: |
           TAG="${GITHUB_REF#refs/tags/}"
+
           # Check if release exists and has empty notes - if so, delete it
           if gh release view "$TAG" &>/dev/null; then
             NOTES=$(gh release view "$TAG" --json body -q '.body')
@@ -315,16 +321,32 @@ jobs:
               exit 1
             fi
           fi
-          # Collect all tarballs
+
+          # Get commit message from the tagged commit
+          COMMIT_MSG=$(git tag -l --format='%(contents)' "$TAG" 2>/dev/null || true)
+          if [ -z "$COMMIT_MSG" ]; then
+            COMMIT_MSG=$(git log -1 --format='%B' "$TAG" 2>/dev/null || true)
+          fi
+
+          # Write release notes to file
+          echo "$COMMIT_MSG" > release_notes.md
+          cat >> release_notes.md << 'NOTES_EOF'
+
+          ___
+
+          See the [README](../../blob/master/README.md) for installation instructions.
+
+          **Downloads:**
+          - Windows: `libgpod-windows-x86_64-py3.12.tar.gz`
+          - macOS Apple Silicon: `libgpod-macos-arm64-py3.12.tar.gz`
+          - macOS Intel: `libgpod-macos-x86_64-py3.12.tar.gz`
+          - Linux (Ubuntu 24.04): `libgpod-linux-x86_64-py3.12.tar.gz`
+          - Linux (Ubuntu 22.04): `libgpod-linux-x86_64-py3.10.tar.gz`
+          NOTES_EOF
+
+          # Collect all tarballs and create release
           FILES=$(find artifacts -name '*.tar.gz' -type f)
           gh release create "$TAG" \
             --title "WebPod $TAG" \
-            --notes "See the [README](../../blob/master/README.md) for installation instructions.
-
-          **Downloads:**
-          - Windows: \`libgpod-windows-x86_64-py3.12.tar.gz\`
-          - macOS Apple Silicon: \`libgpod-macos-arm64-py3.12.tar.gz\`
-          - macOS Intel: \`libgpod-macos-x86_64-py3.12.tar.gz\`
-          - Linux (Ubuntu 24.04): \`libgpod-linux-x86_64-py3.12.tar.gz\`
-          - Linux (Ubuntu 22.04): \`libgpod-linux-x86_64-py3.10.tar.gz\`" \
+            --notes-file release_notes.md \
             $FILES
