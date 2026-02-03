@@ -492,6 +492,89 @@ var Library = {
     },
 
     /**
+     * Update existing expansion panel content (for same-row album switching)
+     */
+    updateExpansionContent: function(albumData, tracks, albumCard) {
+        var panel = document.querySelector('.album-expansion');
+        if (!panel) {
+            // Fallback: create new panel if somehow missing
+            Library.renderAlbumExpansion(albumData, tracks, albumCard);
+            return;
+        }
+
+        // Update title and artist
+        var title = panel.querySelector('.album-expansion-title');
+        var artist = panel.querySelector('.album-expansion-artist');
+        title.textContent = albumData.album || 'Unknown Album';
+        artist.textContent = albumData.artist || 'Unknown Artist';
+        if (albumData.year) {
+            artist.textContent += ' (' + albumData.year + ')';
+        }
+
+        // Update album art
+        var artImg = panel.querySelector('.album-expansion-art img');
+        if (albumData.artwork_hash) {
+            artImg.src = '/api/artwork/' + albumData.artwork_hash;
+        } else {
+            artImg.src = PLACEHOLDER_IMG;
+        }
+
+        // Rebuild track list
+        var trackList = panel.querySelector('.album-expansion-tracks');
+        trackList.innerHTML = '';
+        var rowCount = Math.ceil(tracks.length / 2);
+        trackList.style.gridTemplateRows = 'repeat(' + rowCount + ', auto)';
+
+        tracks.forEach(function(track, index) {
+            var row = document.createElement('div');
+            row.className = 'album-expansion-track';
+            row.draggable = true;
+            row.dataset.trackId = track.id;
+            row.dataset.index = index;
+
+            var nr = document.createElement('span');
+            nr.className = 'expansion-track-nr';
+            nr.textContent = track.track_nr || (index + 1);
+
+            var titleSpan = document.createElement('span');
+            titleSpan.className = 'expansion-track-title';
+            titleSpan.textContent = track.title || 'Unknown';
+
+            var duration = document.createElement('span');
+            duration.className = 'expansion-track-duration';
+            duration.textContent = WebPod.formatDuration(track.duration_ms);
+
+            row.appendChild(nr);
+            row.appendChild(titleSpan);
+            row.appendChild(duration);
+
+            row.addEventListener('click', function(e) {
+                e.stopPropagation();
+                Library.handleExpansionTrackClick(e, track.id, index);
+            });
+
+            row.addEventListener('dragstart', function(e) {
+                if (Library.expansionSelectedIds.indexOf(track.id) === -1) {
+                    Library.expansionSelectedIds = [track.id];
+                    Library.updateExpansionSelection();
+                }
+                var dragData = JSON.stringify({
+                    type: 'tracks',
+                    track_ids: Library.expansionSelectedIds.slice()
+                });
+                e.dataTransfer.setData('text/plain', dragData);
+                e.dataTransfer.effectAllowed = 'copy';
+            });
+
+            trackList.appendChild(row);
+        });
+
+        // Update expanded card highlight
+        albumCard.classList.add('expanded');
+        Library.expandedAlbumCard = albumCard;
+    },
+
+    /**
      * Load and display tracks for an album inline (iTunes 11 style)
      */
     loadAlbumTracks: function(albumName, albumData, albumCard) {
@@ -501,8 +584,25 @@ var Library = {
             return;
         }
 
-        // Collapse any existing expansion
-        Library.collapseAlbum();
+        // Check if we're switching albums within the same row
+        var sameRow = false;
+        if (Library.expandedAlbumCard) {
+            var grid = document.getElementById('albums-grid');
+            var cards = Array.from(grid.querySelectorAll('.album-card'));
+            var gridStyle = window.getComputedStyle(grid);
+            var columns = gridStyle.getPropertyValue('grid-template-columns').split(' ').length;
+
+            var oldIndex = cards.indexOf(Library.expandedAlbumCard);
+            var newIndex = cards.indexOf(albumCard);
+            var oldRow = Math.floor(oldIndex / columns);
+            var newRow = Math.floor(newIndex / columns);
+            sameRow = (oldRow === newRow);
+        }
+
+        // If different row, collapse first
+        if (!sameRow) {
+            Library.collapseAlbum();
+        }
 
         // Fetch tracks for this album
         var url = '/api/library/tracks?per_page=500&album=' + encodeURIComponent(albumName);
@@ -513,13 +613,23 @@ var Library = {
                 return;
             }
 
+            // Update state
+            if (Library.expandedAlbumCard) {
+                Library.expandedAlbumCard.classList.remove('expanded');
+            }
             Library.expandedAlbum = albumName;
             Library.expandedAlbumData = albumData;
             Library.expansionTracks = tracks;
             Library.expansionSelectedIds = [];
             Library.expansionLastSelectedIndex = -1;
 
-            Library.renderAlbumExpansion(albumData, tracks, albumCard);
+            if (sameRow) {
+                // Update existing panel content in place
+                Library.updateExpansionContent(albumData, tracks, albumCard);
+            } else {
+                // Create new panel
+                Library.renderAlbumExpansion(albumData, tracks, albumCard);
+            }
         });
     },
 
