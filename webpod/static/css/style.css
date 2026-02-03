@@ -789,3 +789,139 @@ body {
     width: 60px;
 }
 
+/* ─── Album Expansion Panel (iTunes 11 Style) ─────── */
+
+.album-expansion {
+    grid-column: 1 / -1;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    padding: 20px;
+    display: flex;
+    gap: 20px;
+    margin-top: 10px;
+    animation: expandIn 0.2s ease-out;
+}
+
+@keyframes expandIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.album-expansion-close {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 20px;
+    cursor: pointer;
+    padding: 0;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.15s, color 0.15s;
+}
+
+.album-expansion-close:hover {
+    background: var(--bg-hover);
+    color: var(--text-bright);
+}
+
+.album-expansion-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.album-expansion-header {
+    margin-bottom: 12px;
+}
+
+.album-expansion-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-bright);
+    margin-bottom: 4px;
+}
+
+.album-expansion-artist {
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.album-expansion-tracks {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-auto-flow: column;
+    gap: 2px 24px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.album-expansion-track {
+    display: flex;
+    align-items: center;
+    padding: 6px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    gap: 12px;
+}
+
+.album-expansion-track:hover {
+    background: var(--bg-hover);
+}
+
+.album-expansion-track.selected {
+    background: var(--bg-selected);
+    color: var(--text-bright);
+}
+
+.album-expansion-track[draggable="true"] {
+    cursor: grab;
+}
+
+.expansion-track-nr {
+    color: var(--text-secondary);
+    width: 24px;
+    text-align: right;
+    flex-shrink: 0;
+}
+
+.expansion-track-title {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.expansion-track-duration {
+    color: var(--text-secondary);
+    flex-shrink: 0;
+}
+
+.album-expansion-art {
+    width: 180px;
+    flex-shrink: 0;
+}
+
+.album-expansion-art img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: 8px;
+    background: var(--bg-primary);
+}
+
+.album-card.expanded {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+

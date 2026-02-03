@@ -19,10 +19,21 @@ var Library = {
     currentPage: 1,
     totalPages: 1,
 
+    // Album expansion state
+    expandedAlbum: null,
+    expandedAlbumData: null,
+    expandedAlbumCard: null,
+    expansionTracks: [],
+    expansionSelectedIds: [],
+    expansionLastSelectedIndex: -1,
+
     /**
      * Load and render album cards
      */
     loadAlbums: function(search) {
+        // Collapse any open expansion before reloading albums
+        Library.collapseAlbum();
+
         var url = '/api/library/albums';
         if (search) {
             url += '?search=' + encodeURIComponent(search);
@@ -77,9 +88,9 @@ var Library = {
                 card.appendChild(img);
                 card.appendChild(info);
 
-                // Click to show album tracks
+                // Click to show album tracks inline
                 card.addEventListener('click', function() {
-                    Library.loadAlbumTracks(album.album);
+                    Library.loadAlbumTracks(album.album, album, card);
                 });
 
                 // Drag support
@@ -255,13 +266,261 @@ var Library = {
     },
 
     /**
-     * Load tracks for a specific album, switch to tracks view
+     * Collapse any open album expansion
      */
-    loadAlbumTracks: function(albumName) {
-        WebPod.switchView('tracks', true);  // Skip auto-load, we'll load with filter
-        WebPod.skipSearchHandler = true;  // Prevent search handler from firing
-        document.getElementById('search-input').value = albumName;
-        Library.loadTracks(null, null, albumName);  // Use exact album filter
+    collapseAlbum: function() {
+        var existing = document.querySelector('.album-expansion');
+        if (existing) {
+            existing.remove();
+        }
+        if (Library.expandedAlbumCard) {
+            Library.expandedAlbumCard.classList.remove('expanded');
+        }
+        Library.expandedAlbum = null;
+        Library.expandedAlbumData = null;
+        Library.expandedAlbumCard = null;
+        Library.expansionTracks = [];
+        Library.expansionSelectedIds = [];
+        Library.expansionLastSelectedIndex = -1;
+
+        // Hide "Add to Playlist" button
+        var container = document.getElementById('add-to-playlist-container');
+        if (container) {
+            container.classList.add('hidden');
+        }
+    },
+
+    /**
+     * Render the album expansion panel
+     */
+    renderAlbumExpansion: function(albumData, tracks, albumCard) {
+        // Create expansion panel
+        var panel = document.createElement('div');
+        panel.className = 'album-expansion';
+
+        // Close button
+        var closeBtn = document.createElement('button');
+        closeBtn.className = 'album-expansion-close';
+        closeBtn.innerHTML = '&times;';
+        closeBtn.title = 'Close';
+        closeBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            Library.collapseAlbum();
+        });
+
+        // Content container
+        var content = document.createElement('div');
+        content.className = 'album-expansion-content';
+
+        // Header with album title and artist
+        var header = document.createElement('div');
+        header.className = 'album-expansion-header';
+
+        var title = document.createElement('div');
+        title.className = 'album-expansion-title';
+        title.textContent = albumData.album || 'Unknown Album';
+
+        var artist = document.createElement('div');
+        artist.className = 'album-expansion-artist';
+        artist.textContent = albumData.artist || 'Unknown Artist';
+        if (albumData.year) {
+            artist.textContent += ' (' + albumData.year + ')';
+        }
+
+        header.appendChild(title);
+        header.appendChild(artist);
+
+        // Track list
+        var trackList = document.createElement('div');
+        trackList.className = 'album-expansion-tracks';
+
+        // Set grid rows for vertical flow (tracks fill columns top-to-bottom)
+        var rowCount = Math.ceil(tracks.length / 2);
+        trackList.style.gridTemplateRows = 'repeat(' + rowCount + ', auto)';
+
+        tracks.forEach(function(track, index) {
+            var row = document.createElement('div');
+            row.className = 'album-expansion-track';
+            row.draggable = true;
+            row.dataset.trackId = track.id;
+            row.dataset.index = index;
+
+            var nr = document.createElement('span');
+            nr.className = 'expansion-track-nr';
+            nr.textContent = track.track_nr || (index + 1);
+
+            var titleSpan = document.createElement('span');
+            titleSpan.className = 'expansion-track-title';
+            titleSpan.textContent = track.title || 'Unknown';
+
+            var duration = document.createElement('span');
+            duration.className = 'expansion-track-duration';
+            duration.textContent = WebPod.formatDuration(track.duration_ms);
+
+            row.appendChild(nr);
+            row.appendChild(titleSpan);
+            row.appendChild(duration);
+
+            // Click handler for selection
+            row.addEventListener('click', function(e) {
+                e.stopPropagation();
+                Library.handleExpansionTrackClick(e, track.id, index);
+            });
+
+            // Drag handler
+            row.addEventListener('dragstart', function(e) {
+                // If dragging a non-selected row, select it alone
+                if (Library.expansionSelectedIds.indexOf(track.id) === -1) {
+                    Library.expansionSelectedIds = [track.id];
+                    Library.updateExpansionSelection();
+                }
+                var dragData = JSON.stringify({
+                    type: 'tracks',
+                    track_ids: Library.expansionSelectedIds.slice()
+                });
+                e.dataTransfer.setData('text/plain', dragData);
+                e.dataTransfer.effectAllowed = 'copy';
+            });
+
+            trackList.appendChild(row);
+        });
+
+        content.appendChild(header);
+        content.appendChild(trackList);
+
+        // Album art
+        var artContainer = document.createElement('div');
+        artContainer.className = 'album-expansion-art';
+
+        var artImg = document.createElement('img');
+        if (albumData.artwork_hash) {
+            artImg.src = '/api/artwork/' + albumData.artwork_hash;
+        } else {
+            artImg.src = PLACEHOLDER_IMG;
+        }
+        artImg.alt = albumData.album || 'Album art';
+        artImg.onerror = function() {
+            this.src = PLACEHOLDER_IMG;
+        };
+
+        artContainer.appendChild(artImg);
+
+        // Assemble panel
+        panel.appendChild(closeBtn);
+        panel.appendChild(content);
+        panel.appendChild(artContainer);
+
+        // Calculate grid position to insert after the last album in this row
+        var grid = document.getElementById('albums-grid');
+        var cards = Array.from(grid.querySelectorAll('.album-card'));
+        var cardIndex = cards.indexOf(albumCard);
+
+        // Get number of columns from computed grid style
+        var gridStyle = window.getComputedStyle(grid);
+        var columnsStr = gridStyle.getPropertyValue('grid-template-columns');
+        var columns = columnsStr.split(' ').length;
+
+        // Find last album in this row
+        var rowStart = Math.floor(cardIndex / columns) * columns;
+        var rowEnd = Math.min(rowStart + columns - 1, cards.length - 1);
+        var lastCardInRow = cards[rowEnd];
+
+        // Insert after last card in row
+        lastCardInRow.insertAdjacentElement('afterend', panel);
+
+        // Mark card as expanded
+        albumCard.classList.add('expanded');
+        Library.expandedAlbumCard = albumCard;
+    },
+
+    /**
+     * Handle click on expansion track row with multi-select
+     */
+    handleExpansionTrackClick: function(e, trackId, index) {
+        if (e.shiftKey && Library.expansionLastSelectedIndex >= 0) {
+            // Range select
+            var start = Math.min(Library.expansionLastSelectedIndex, index);
+            var end = Math.max(Library.expansionLastSelectedIndex, index);
+            if (!e.ctrlKey && !e.metaKey) {
+                Library.expansionSelectedIds = [];
+            }
+            for (var i = start; i <= end; i++) {
+                var id = Library.expansionTracks[i].id;
+                if (Library.expansionSelectedIds.indexOf(id) === -1) {
+                    Library.expansionSelectedIds.push(id);
+                }
+            }
+        } else if (e.ctrlKey || e.metaKey) {
+            // Toggle single
+            var idx = Library.expansionSelectedIds.indexOf(trackId);
+            if (idx >= 0) {
+                Library.expansionSelectedIds.splice(idx, 1);
+            } else {
+                Library.expansionSelectedIds.push(trackId);
+            }
+        } else {
+            // Single select
+            Library.expansionSelectedIds = [trackId];
+        }
+        Library.expansionLastSelectedIndex = index;
+        Library.updateExpansionSelection();
+    },
+
+    /**
+     * Update visual selection state on expansion track rows
+     */
+    updateExpansionSelection: function() {
+        var rows = document.querySelectorAll('.album-expansion-track');
+        rows.forEach(function(row) {
+            var id = parseInt(row.dataset.trackId, 10);
+            if (Library.expansionSelectedIds.indexOf(id) >= 0) {
+                row.classList.add('selected');
+            } else {
+                row.classList.remove('selected');
+            }
+        });
+
+        // Show/hide "Add to Playlist" button based on selection
+        var container = document.getElementById('add-to-playlist-container');
+        if (container) {
+            if (Library.expansionSelectedIds.length > 0 && IPod.connected) {
+                container.classList.remove('hidden');
+            } else {
+                container.classList.add('hidden');
+            }
+        }
+    },
+
+    /**
+     * Load and display tracks for an album inline (iTunes 11 style)
+     */
+    loadAlbumTracks: function(albumName, albumData, albumCard) {
+        // If same album clicked, toggle collapse
+        if (Library.expandedAlbum === albumName) {
+            Library.collapseAlbum();
+            return;
+        }
+
+        // Collapse any existing expansion
+        Library.collapseAlbum();
+
+        // Fetch tracks for this album
+        var url = '/api/library/tracks?per_page=500&album=' + encodeURIComponent(albumName);
+        WebPod.api(url).then(function(data) {
+            var tracks = data.tracks || [];
+            if (tracks.length === 0) {
+                WebPod.toast('No tracks found for this album', 'warning');
+                return;
+            }
+
+            Library.expandedAlbum = albumName;
+            Library.expandedAlbumData = albumData;
+            Library.expansionTracks = tracks;
+            Library.expansionSelectedIds = [];
+            Library.expansionLastSelectedIndex = -1;
+
+            Library.renderAlbumExpansion(albumData, tracks, albumCard);
+        });
     },
 
     /**

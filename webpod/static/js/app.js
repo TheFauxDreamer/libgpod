@@ -77,6 +77,12 @@ var WebPod = {
             'podcasts': document.getElementById('view-podcasts'),
             'ipod-tracks': document.getElementById('view-ipod-tracks')
         };
+
+        // Collapse any album expansion when switching views
+        if (view !== 'albums' && Library.expandedAlbum) {
+            Library.collapseAlbum();
+        }
+
         views.forEach(function(v) {
             var el = document.getElementById(v + '-view');
             if (el) {

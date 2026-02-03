@@ -438,7 +438,11 @@ var IPod = {
      * Add currently selected library tracks to a playlist
      */
     addSelectedToPlaylist: function(playlistId, playlistName) {
-        var trackIds = Library.selectedTrackIds;
+        // Check for expansion selection first, then fall back to tracks view selection
+        var trackIds = Library.expansionSelectedIds.length > 0
+            ? Library.expansionSelectedIds
+            : Library.selectedTrackIds;
+
         if (!trackIds || trackIds.length === 0) {
             WebPod.toast('No tracks selected', 'error');
             return;
@@ -457,7 +461,15 @@ var IPod = {
             var msg = 'Added ' + (data.added || 0) + ' tracks to ' + (playlistName || 'iPod');
             if (data.duplicates) msg += ' (' + data.duplicates + ' duplicates skipped)';
             WebPod.toast(msg, 'success');
-            Library.clearSelection();
+
+            // Clear appropriate selection
+            if (Library.expansionSelectedIds.length > 0) {
+                Library.expansionSelectedIds = [];
+                Library.updateExpansionSelection();
+            } else {
+                Library.clearSelection();
+            }
+
             IPod.loadTracks();
             IPod.loadPlaylists();
         }).catch(function(err) {
