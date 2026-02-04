@@ -19,6 +19,14 @@ var Library = {
     currentPage: 1,
     totalPages: 1,
 
+    // Tracks pagination state
+    tracksPage: 1,
+    tracksTotal: 0,
+    tracksLoading: false,
+    tracksPerPage: 100,
+    tracksSearch: '',
+    tracksSort: 'title',
+
     // Album expansion state
     expandedAlbum: null,
     expandedAlbumData: null,
@@ -112,14 +120,37 @@ var Library = {
     },
 
     /**
-     * Load and render track rows
+     * Load and render track rows with pagination support
+     * @param {string} search - Search query
+     * @param {string} sort - Sort field
+     * @param {string} album - Album filter (if set, no pagination)
+     * @param {boolean} append - If true, append to existing tracks
      */
-    loadTracks: function(search, sort, album) {
+    loadTracks: function(search, sort, album, append) {
+        if (Library.tracksLoading) return;
+
         var sortSelect = document.getElementById('sort-select');
         sort = sort || (sortSelect ? sortSelect.value : 'title');
-        var url = '/api/library/tracks?per_page=500&sort=' + encodeURIComponent(sort);
+
+        // Reset pagination unless appending
+        if (!append) {
+            Library.tracksPage = 1;
+            Library.allTracks = [];
+            Library.selectedTrackIds = [];
+            Library.lastSelectedIndex = -1;
+            Library.tracksSearch = search || '';
+            Library.tracksSort = sort;
+        }
+
+        Library.tracksLoading = true;
+
+        // Build URL with pagination (unless filtering by album)
+        var url = '/api/library/tracks?page=' + Library.tracksPage +
+                  '&per_page=' + Library.tracksPerPage +
+                  '&sort=' + encodeURIComponent(sort);
         if (album) {
-            url += '&album=' + encodeURIComponent(album);
+            url = '/api/library/tracks?per_page=500&sort=' + encodeURIComponent(sort) +
+                  '&album=' + encodeURIComponent(album);
         } else if (search) {
             url += '&search=' + encodeURIComponent(search);
         }
@@ -128,19 +159,31 @@ var Library = {
             var tbody = document.getElementById('tracks-tbody');
             var empty = document.getElementById('empty-state');
             var tracks = data.tracks || data || [];
-            Library.allTracks = tracks;
-            Library.selectedTrackIds = [];
-            Library.lastSelectedIndex = -1;
+            Library.tracksTotal = data.total || tracks.length;
 
-            if (tracks.length === 0) {
+            // Append or replace tracks
+            if (append) {
+                Library.allTracks = Library.allTracks.concat(tracks);
+            } else {
+                Library.allTracks = tracks;
                 tbody.innerHTML = '';
+            }
+
+            Library.tracksLoading = false;
+
+            if (Library.allTracks.length === 0) {
                 if (empty) empty.classList.remove('hidden');
+                Library.updateStats('0 tracks');
                 return;
             }
             if (empty) empty.classList.add('hidden');
 
-            tbody.innerHTML = '';
-            tracks.forEach(function(track, index) {
+            // Render new tracks (all if replacing, or just new ones if appending)
+            var startIndex = append ? (Library.allTracks.length - tracks.length) : 0;
+            var tracksToRender = append ? tracks : Library.allTracks;
+
+            tracksToRender.forEach(function(track, i) {
+                var index = startIndex + i;
                 var tr = document.createElement('tr');
                 tr.draggable = true;
                 tr.dataset.trackId = track.id;
@@ -162,7 +205,7 @@ var Library = {
                 tdGenre.textContent = track.genre || '';
 
                 var tdDuration = document.createElement('td');
-                tdDuration.textContent = WebPod.formatDuration(track.duration);
+                tdDuration.textContent = WebPod.formatDuration(track.duration_ms);
 
                 tr.appendChild(tdNr);
                 tr.appendChild(tdTitle);
@@ -194,8 +237,26 @@ var Library = {
                 tbody.appendChild(tr);
             });
 
-            Library.updateStats(tracks.length + ' tracks');
+            // Update stats to show loaded/total
+            if (Library.tracksTotal > Library.allTracks.length) {
+                Library.updateStats(Library.allTracks.length + ' of ' + Library.tracksTotal + ' tracks');
+            } else {
+                Library.updateStats(Library.allTracks.length + ' tracks');
+            }
+        }).catch(function() {
+            Library.tracksLoading = false;
         });
+    },
+
+    /**
+     * Load more tracks (infinite scroll)
+     */
+    loadMoreTracks: function() {
+        if (Library.tracksLoading) return;
+        if (Library.allTracks.length >= Library.tracksTotal) return;
+
+        Library.tracksPage++;
+        Library.loadTracks(Library.tracksSearch, Library.tracksSort, null, true);
     },
 
     /**
@@ -330,59 +391,91 @@ var Library = {
         header.appendChild(title);
         header.appendChild(artist);
 
-        // Track list
+        // Track list container
         var trackList = document.createElement('div');
         trackList.className = 'album-expansion-tracks';
 
-        // Set grid rows for vertical flow (tracks fill columns top-to-bottom)
-        var rowCount = Math.ceil(tracks.length / 2);
-        trackList.style.gridTemplateRows = 'repeat(' + rowCount + ', auto)';
-
+        // Group tracks by disc number
+        var discGroups = {};
         tracks.forEach(function(track, index) {
-            var row = document.createElement('div');
-            row.className = 'album-expansion-track';
-            row.draggable = true;
-            row.dataset.trackId = track.id;
-            row.dataset.index = index;
+            var discNum = track.cd_nr || 1;
+            if (!discGroups[discNum]) {
+                discGroups[discNum] = [];
+            }
+            discGroups[discNum].push({ track: track, globalIndex: index });
+        });
 
-            var nr = document.createElement('span');
-            nr.className = 'expansion-track-nr';
-            nr.textContent = track.track_nr || (index + 1);
+        var discNumbers = Object.keys(discGroups).map(Number).sort(function(a, b) { return a - b; });
+        var hasMultipleDiscs = discNumbers.length > 1 || (discNumbers.length === 1 && discNumbers[0] > 1);
 
-            var titleSpan = document.createElement('span');
-            titleSpan.className = 'expansion-track-title';
-            titleSpan.textContent = track.title || 'Unknown';
+        // Render each disc section
+        discNumbers.forEach(function(discNum) {
+            var discTracks = discGroups[discNum];
 
-            var duration = document.createElement('span');
-            duration.className = 'expansion-track-duration';
-            duration.textContent = WebPod.formatDuration(track.duration_ms);
+            // Add disc header if multiple discs
+            if (hasMultipleDiscs) {
+                var discHeader = document.createElement('div');
+                discHeader.className = 'album-expansion-disc-header';
+                discHeader.textContent = 'Disc ' + discNum;
+                trackList.appendChild(discHeader);
+            }
 
-            row.appendChild(nr);
-            row.appendChild(titleSpan);
-            row.appendChild(duration);
+            // Create track grid for this disc
+            var discGrid = document.createElement('div');
+            discGrid.className = 'album-expansion-disc-tracks';
+            var rowCount = Math.ceil(discTracks.length / 2);
+            discGrid.style.gridTemplateRows = 'repeat(' + rowCount + ', auto)';
 
-            // Click handler for selection
-            row.addEventListener('click', function(e) {
-                e.stopPropagation();
-                Library.handleExpansionTrackClick(e, track.id, index);
-            });
+            discTracks.forEach(function(item, discIndex) {
+                var track = item.track;
+                var globalIndex = item.globalIndex;
 
-            // Drag handler
-            row.addEventListener('dragstart', function(e) {
-                // If dragging a non-selected row, select it alone
-                if (Library.expansionSelectedIds.indexOf(track.id) === -1) {
-                    Library.expansionSelectedIds = [track.id];
-                    Library.updateExpansionSelection();
-                }
-                var dragData = JSON.stringify({
-                    type: 'tracks',
-                    track_ids: Library.expansionSelectedIds.slice()
+                var row = document.createElement('div');
+                row.className = 'album-expansion-track';
+                row.draggable = true;
+                row.dataset.trackId = track.id;
+                row.dataset.index = globalIndex;
+
+                var nr = document.createElement('span');
+                nr.className = 'expansion-track-nr';
+                nr.textContent = track.track_nr || (discIndex + 1);
+
+                var titleSpan = document.createElement('span');
+                titleSpan.className = 'expansion-track-title';
+                titleSpan.textContent = track.title || 'Unknown';
+
+                var duration = document.createElement('span');
+                duration.className = 'expansion-track-duration';
+                duration.textContent = WebPod.formatDuration(track.duration_ms);
+
+                row.appendChild(nr);
+                row.appendChild(titleSpan);
+                row.appendChild(duration);
+
+                // Click handler for selection
+                row.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    Library.handleExpansionTrackClick(e, track.id, globalIndex);
                 });
-                e.dataTransfer.setData('text/plain', dragData);
-                e.dataTransfer.effectAllowed = 'copy';
+
+                // Drag handler
+                row.addEventListener('dragstart', function(e) {
+                    if (Library.expansionSelectedIds.indexOf(track.id) === -1) {
+                        Library.expansionSelectedIds = [track.id];
+                        Library.updateExpansionSelection();
+                    }
+                    var dragData = JSON.stringify({
+                        type: 'tracks',
+                        track_ids: Library.expansionSelectedIds.slice()
+                    });
+                    e.dataTransfer.setData('text/plain', dragData);
+                    e.dataTransfer.effectAllowed = 'copy';
+                });
+
+                discGrid.appendChild(row);
             });
 
-            trackList.appendChild(row);
+            trackList.appendChild(discGrid);
         });
 
         content.appendChild(header);
@@ -522,51 +615,86 @@ var Library = {
         // Rebuild track list
         var trackList = panel.querySelector('.album-expansion-tracks');
         trackList.innerHTML = '';
-        var rowCount = Math.ceil(tracks.length / 2);
-        trackList.style.gridTemplateRows = 'repeat(' + rowCount + ', auto)';
 
+        // Group tracks by disc number
+        var discGroups = {};
         tracks.forEach(function(track, index) {
-            var row = document.createElement('div');
-            row.className = 'album-expansion-track';
-            row.draggable = true;
-            row.dataset.trackId = track.id;
-            row.dataset.index = index;
+            var discNum = track.cd_nr || 1;
+            if (!discGroups[discNum]) {
+                discGroups[discNum] = [];
+            }
+            discGroups[discNum].push({ track: track, globalIndex: index });
+        });
 
-            var nr = document.createElement('span');
-            nr.className = 'expansion-track-nr';
-            nr.textContent = track.track_nr || (index + 1);
+        var discNumbers = Object.keys(discGroups).map(Number).sort(function(a, b) { return a - b; });
+        var hasMultipleDiscs = discNumbers.length > 1 || (discNumbers.length === 1 && discNumbers[0] > 1);
 
-            var titleSpan = document.createElement('span');
-            titleSpan.className = 'expansion-track-title';
-            titleSpan.textContent = track.title || 'Unknown';
+        // Render each disc section
+        discNumbers.forEach(function(discNum) {
+            var discTracks = discGroups[discNum];
 
-            var duration = document.createElement('span');
-            duration.className = 'expansion-track-duration';
-            duration.textContent = WebPod.formatDuration(track.duration_ms);
+            // Add disc header if multiple discs
+            if (hasMultipleDiscs) {
+                var discHeader = document.createElement('div');
+                discHeader.className = 'album-expansion-disc-header';
+                discHeader.textContent = 'Disc ' + discNum;
+                trackList.appendChild(discHeader);
+            }
 
-            row.appendChild(nr);
-            row.appendChild(titleSpan);
-            row.appendChild(duration);
+            // Create track grid for this disc
+            var discGrid = document.createElement('div');
+            discGrid.className = 'album-expansion-disc-tracks';
+            var rowCount = Math.ceil(discTracks.length / 2);
+            discGrid.style.gridTemplateRows = 'repeat(' + rowCount + ', auto)';
 
-            row.addEventListener('click', function(e) {
-                e.stopPropagation();
-                Library.handleExpansionTrackClick(e, track.id, index);
-            });
+            discTracks.forEach(function(item, discIndex) {
+                var track = item.track;
+                var globalIndex = item.globalIndex;
 
-            row.addEventListener('dragstart', function(e) {
-                if (Library.expansionSelectedIds.indexOf(track.id) === -1) {
-                    Library.expansionSelectedIds = [track.id];
-                    Library.updateExpansionSelection();
-                }
-                var dragData = JSON.stringify({
-                    type: 'tracks',
-                    track_ids: Library.expansionSelectedIds.slice()
+                var row = document.createElement('div');
+                row.className = 'album-expansion-track';
+                row.draggable = true;
+                row.dataset.trackId = track.id;
+                row.dataset.index = globalIndex;
+
+                var nr = document.createElement('span');
+                nr.className = 'expansion-track-nr';
+                nr.textContent = track.track_nr || (discIndex + 1);
+
+                var titleSpan = document.createElement('span');
+                titleSpan.className = 'expansion-track-title';
+                titleSpan.textContent = track.title || 'Unknown';
+
+                var duration = document.createElement('span');
+                duration.className = 'expansion-track-duration';
+                duration.textContent = WebPod.formatDuration(track.duration_ms);
+
+                row.appendChild(nr);
+                row.appendChild(titleSpan);
+                row.appendChild(duration);
+
+                row.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    Library.handleExpansionTrackClick(e, track.id, globalIndex);
                 });
-                e.dataTransfer.setData('text/plain', dragData);
-                e.dataTransfer.effectAllowed = 'copy';
+
+                row.addEventListener('dragstart', function(e) {
+                    if (Library.expansionSelectedIds.indexOf(track.id) === -1) {
+                        Library.expansionSelectedIds = [track.id];
+                        Library.updateExpansionSelection();
+                    }
+                    var dragData = JSON.stringify({
+                        type: 'tracks',
+                        track_ids: Library.expansionSelectedIds.slice()
+                    });
+                    e.dataTransfer.setData('text/plain', dragData);
+                    e.dataTransfer.effectAllowed = 'copy';
+                });
+
+                discGrid.appendChild(row);
             });
 
-            trackList.appendChild(row);
+            trackList.appendChild(discGrid);
         });
 
         // Update expanded card highlight
@@ -663,10 +791,30 @@ var Library = {
     },
 
     /**
+     * Initialize infinite scroll for tracks view
+     */
+    initTracksScroll: function() {
+        var tracksView = document.getElementById('tracks-view');
+        if (!tracksView) return;
+
+        tracksView.addEventListener('scroll', function() {
+            // Only load more if we're in tracks view
+            if (WebPod.currentView !== 'tracks') return;
+
+            // Load more when within 200px of the bottom
+            var scrollBottom = tracksView.scrollHeight - tracksView.scrollTop - tracksView.clientHeight;
+            if (scrollBottom < 200) {
+                Library.loadMoreTracks();
+            }
+        });
+    },
+
+    /**
      * Initialize library module
      */
     init: function() {
         Library.initScan();
+        Library.initTracksScroll();
     }
 };
 

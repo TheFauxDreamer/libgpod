@@ -194,8 +194,15 @@ def get_tracks(page=1, per_page=50, sort="artist", order="asc", search=None, alb
     total = count_row["cnt"]
 
     offset = (page - 1) * per_page
+
+    # When fetching tracks for a specific album, sort by disc and track number
+    if album:
+        order_clause = "ORDER BY COALESCE(cd_nr, 1), COALESCE(track_nr, 0)"
+    else:
+        order_clause = f"ORDER BY {sort} {order}"
+
     rows = conn.execute(
-        f"SELECT * FROM library_tracks {where} ORDER BY {sort} {order} LIMIT ? OFFSET ?",
+        f"SELECT * FROM library_tracks {where} {order_clause} LIMIT ? OFFSET ?",
         params + [per_page, offset]
     ).fetchall()
     conn.close()
