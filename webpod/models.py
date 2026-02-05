@@ -150,6 +150,20 @@ def upsert_track(track_data):
     conn.close()
 
 
+def check_duplicate_hash(sha1_hash_value):
+    """Check if a track with this SHA1 hash already exists in the library.
+
+    Returns the existing track dict if found, or None.
+    """
+    conn = get_db()
+    row = conn.execute(
+        "SELECT id, title, artist, file_path FROM library_tracks WHERE sha1_hash = ?",
+        (sha1_hash_value,)
+    ).fetchone()
+    conn.close()
+    return dict(row) if row else None
+
+
 def get_cached_mtime(file_path):
     """Get the cached mtime for a file, or None if not cached."""
     conn = get_db()
@@ -342,11 +356,12 @@ def remove_files_without_metadata_if_disabled():
     if allow_no_metadata == '1':
         return 0  # Setting allows files without metadata, do nothing
 
-    # Setting disallows files without metadata - remove any that exist
+    # Setting disallows files without metadata - remove any that exist (except podcasts)
     conn = get_db()
     rows = conn.execute("""
         SELECT id FROM library_tracks
-        WHERE (artist IS NULL OR artist = '')
+        WHERE is_podcast = 0
+          AND (artist IS NULL OR artist = '')
           AND (album IS NULL OR album = '')
           AND (album_artist IS NULL OR album_artist = '')
           AND (genre IS NULL OR genre = '')

@@ -1321,3 +1321,131 @@ td > .format-tag {
     margin-bottom: 16px;
 }
 
+/* ─── Upload Dialog ─────────────────────────────── */
+
+#upload-dropzone {
+    border: 2px dashed var(--border-color);
+    border-radius: var(--radius);
+    padding: 40px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s, background-color 0.2s;
+    margin-bottom: 16px;
+}
+
+#upload-dropzone:hover {
+    border-color: var(--accent);
+}
+
+#upload-dropzone.drag-over {
+    border-color: var(--accent);
+    background: rgba(0, 120, 212, 0.08);
+}
+
+#upload-dropzone p {
+    margin: 4px 0;
+}
+
+.upload-formats {
+    font-size: 11px;
+}
+
+#upload-file-list {
+    max-height: 200px;
+    overflow-y: auto;
+    margin-bottom: 16px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+}
+
+.upload-file-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 10px;
+    font-size: 13px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.upload-file-item:last-child {
+    border-bottom: none;
+}
+
+.upload-file-info {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-primary);
+}
+
+.upload-file-remove {
+    cursor: pointer;
+    color: var(--text-secondary);
+    padding: 2px 6px;
+    font-size: 16px;
+    line-height: 1;
+    border-radius: 3px;
+    flex-shrink: 0;
+}
+
+.upload-file-remove:hover {
+    color: var(--danger);
+    background: var(--bg-hover);
+}
+
+#upload-progress-area {
+    margin-bottom: 16px;
+}
+
+#upload-progress-area .progress-bar-container {
+    height: 6px;
+    background: var(--border-color);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+#upload-progress-bar {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 3px;
+    width: 0%;
+    transition: width 0.2s ease;
+}
+
+#upload-progress-text {
+    font-size: 12px;
+    color: var(--text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#upload-results {
+    margin-bottom: 16px;
+    max-height: 250px;
+    overflow-y: auto;
+}
+
+.upload-results-summary {
+    font-size: 13px;
+}
+
+.upload-result-section {
+    margin-bottom: 12px;
+}
+
+.upload-result-section strong {
+    display: block;
+    margin-bottom: 4px;
+}
+
+.upload-result-added { color: var(--success); }
+.upload-result-duplicate { color: var(--warning); }
+.upload-result-error { color: var(--danger); }
+
+.upload-result-item {
+    padding: 2px 0;
+    color: var(--text-secondary);
+}
+

@@ -41,6 +41,7 @@
                         <span class="status-text">Podcast library not set</span>
                     </div>
                 </div>
+                <button id="upload-btn" class="btn btn-small btn-block">Upload Music</button>
             </div>
 
             <!-- iPod Section -->
@@ -437,6 +438,31 @@
         </div>
     </div>
 
+    <!-- Upload Dialog -->
+    <div id="upload-dialog" class="dialog-overlay hidden">
+        <div class="dialog dialog-wide">
+            <h3>Upload Music</h3>
+            <div id="upload-dropzone">
+                <p>Drag audio files here or click to browse</p>
+                <p class="upload-formats">Supported: MP3, M4A, AAC, FLAC, WAV</p>
+                <input type="file" id="upload-file-input" multiple
+                       accept=".mp3,.m4a,.aac,.flac,.wav,.mp4" hidden />
+            </div>
+            <div id="upload-file-list" class="hidden"></div>
+            <div id="upload-progress-area" class="hidden">
+                <div class="progress-bar-container">
+                    <div id="upload-progress-bar" class="progress-bar"></div>
+                </div>
+                <div id="upload-progress-text"></div>
+            </div>
+            <div id="upload-results" class="hidden"></div>
+            <div class="dialog-actions">
+                <button id="upload-start-btn" class="btn btn-primary hidden">Upload</button>
+                <button id="upload-close" class="btn">Close</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Notification Toast -->
     <div id="toast" class="hidden"></div>
 
@@ -447,5 +473,6 @@
     <script src="/static/js/dragdrop.js"></script>
     <script src="/static/js/sync.js"></script>
     <script src="/static/js/podcasts.js"></script>
+    <script src="/static/js/upload.js"></script>
 </body>
 </html>

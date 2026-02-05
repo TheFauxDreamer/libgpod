@@ -1,6 +1,9 @@
 """Flask application with SocketIO for the WebPod iPod manager."""
 
 import os
+import re
+import shutil
+import tempfile
 from pathlib import Path
 
 from flask import Flask, jsonify, request, send_from_directory, send_file
@@ -8,14 +11,16 @@ from flask_socketio import SocketIO
 
 from . import models
 from .artwork import get_artwork_path, init_artwork_cache, ARTWORK_CACHE_DIR
+from .duplicate_detector import sha1_hash
 from .ipod_detect import detect_ipods
 from .ipod_manager import IPodManager, IPodError
-from .library_scanner import scan_directory
+from .library_scanner import scan_directory, process_single_file, SUPPORTED_EXTENSIONS, _extract_metadata
 
 app = Flask(__name__,
             static_folder='static',
             template_folder='templates')
 app.config['SECRET_KEY'] = 'webpod-secret-key'
+app.config['MAX_CONTENT_LENGTH'] = 500 * 1024 * 1024  # 500 MB
 
 socketio = SocketIO(app, async_mode='threading')
 ipod = IPodManager()
@@ -210,6 +215,138 @@ def library_scan_podcasts():
 
     socketio.start_background_task(_scan)
     return jsonify({"status": "scanning"})
+
+
+# ─── Upload API ──────────────────────────────────────────────────────
+
+def _sanitize_name(name):
+    """Sanitize a string for use as a directory or file name."""
+    # Remove characters that are problematic on filesystems
+    name = re.sub(r'[<>:"/\\|?*]', '_', name)
+    # Collapse multiple underscores/spaces
+    name = re.sub(r'[_\s]+', ' ', name).strip()
+    # Limit length
+    return name[:100] if name else 'Unknown'
+
+
+def _unique_path(dest_path):
+    """Return dest_path if it doesn't exist, otherwise append (1), (2), etc."""
+    if not dest_path.exists():
+        return dest_path
+    stem = dest_path.stem
+    suffix = dest_path.suffix
+    parent = dest_path.parent
+    counter = 1
+    while True:
+        candidate = parent / f"{stem} ({counter}){suffix}"
+        if not candidate.exists():
+            return candidate
+        counter += 1
+
+
+@app.route('/api/library/upload', methods=['POST'])
+def library_upload():
+    """Upload audio files from the browser and add them to the library."""
+    files = request.files.getlist('files')
+    if not files or all(f.filename == '' for f in files):
+        return jsonify({"error": "No files provided"}), 400
+
+    # Determine upload destination
+    library_path = models.get_library_path()
+    if library_path:
+        upload_dir = Path(library_path) / 'Uploads'
+    else:
+        upload_dir = Path(__file__).parent / 'uploads'
+
+    added = []
+    duplicates = []
+    errors = []
+
+    for f in files:
+        filename = f.filename or ''
+        ext = Path(filename).suffix.lower()
+
+        # Validate extension
+        if ext not in SUPPORTED_EXTENSIONS:
+            errors.append({'filename': filename, 'reason': f'Unsupported format: {ext}'})
+            continue
+
+        # Save to temp file first
+        try:
+            fd, tmp_path = tempfile.mkstemp(suffix=ext)
+            os.close(fd)
+            f.save(tmp_path)
+        except Exception as e:
+            errors.append({'filename': filename, 'reason': f'Failed to save: {e}'})
+            continue
+
+        # Check for duplicates by hash
+        try:
+            file_hash = sha1_hash(tmp_path)
+        except OSError:
+            os.unlink(tmp_path)
+            errors.append({'filename': filename, 'reason': 'Failed to read file'})
+            continue
+
+        existing = models.check_duplicate_hash(file_hash)
+        if existing:
+            os.unlink(tmp_path)
+            duplicates.append({
+                'filename': filename,
+                'existing_title': existing.get('title'),
+                'existing_artist': existing.get('artist'),
+            })
+            continue
+
+        # Extract metadata to determine destination folder
+        meta = _extract_metadata(tmp_path)
+        artist = _sanitize_name(
+            (meta.get('artist') if meta else None) or 'Unknown Artist'
+        )
+        album = _sanitize_name(
+            (meta.get('album') if meta else None) or 'Unknown Album'
+        )
+
+        # Build final destination path
+        dest_dir = upload_dir / artist / album
+        dest_dir.mkdir(parents=True, exist_ok=True)
+        dest_path = _unique_path(dest_dir / filename)
+
+        # Move temp file to final location
+        try:
+            shutil.move(tmp_path, str(dest_path))
+        except Exception as e:
+            if os.path.exists(tmp_path):
+                os.unlink(tmp_path)
+            errors.append({'filename': filename, 'reason': f'Failed to move file: {e}'})
+            continue
+
+        # Process into library database
+        result = process_single_file(str(dest_path))
+        if result['status'] == 'added':
+            track = result['track_data']
+            added.append({
+                'filename': filename,
+                'title': track.get('title'),
+                'artist': track.get('artist'),
+                'album': track.get('album'),
+            })
+        else:
+            errors.append({
+                'filename': filename,
+                'reason': result.get('reason', 'Processing failed'),
+            })
+
+    return jsonify({
+        'added': added,
+        'duplicates': duplicates,
+        'errors': errors,
+        'summary': {
+            'added_count': len(added),
+            'duplicate_count': len(duplicates),
+            'error_count': len(errors),
+        }
+    })
 
 
 # ─── Podcast API ──────────────────────────────────────────────────────

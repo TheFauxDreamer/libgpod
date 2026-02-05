@@ -227,6 +227,68 @@ def _extract_metadata(file_path):
     return meta
 
 
+def process_single_file(file_path, is_podcast=False):
+    """Process a single audio file: extract metadata, hash, artwork, store in DB.
+
+    Args:
+        file_path: Path to the audio file.
+        is_podcast: If True, mark the track as a podcast.
+
+    Returns:
+        dict with 'status' ('added', 'skipped', 'error') and optional 'track_data' or 'reason'.
+    """
+    file_str = str(file_path)
+
+    try:
+        mtime = os.stat(file_str).st_mtime
+    except OSError:
+        return {'status': 'error', 'reason': 'File not accessible'}
+
+    # Extract metadata
+    meta = _extract_metadata(file_str)
+    if meta is None:
+        return {'status': 'error', 'reason': 'Cannot parse audio file'}
+
+    # Check if file has meaningful metadata (beyond just filename/duration)
+    has_metadata = bool(
+        meta.get('artist') or
+        meta.get('album') or
+        meta.get('album_artist') or
+        meta.get('genre') or
+        meta.get('year') or
+        meta.get('track_nr')
+    )
+
+    # If no metadata, check user setting (podcasts are always allowed through)
+    if not has_metadata and not is_podcast:
+        allow_no_metadata = models.get_setting('allow_files_without_metadata')
+        if allow_no_metadata != '1':
+            return {'status': 'skipped', 'reason': 'No metadata'}
+
+    # Compute hash for duplicate detection
+    try:
+        file_hash = sha1_hash(file_str)
+    except OSError:
+        return {'status': 'error', 'reason': 'Cannot read file for hashing'}
+
+    # Extract and cache artwork
+    has_art, art_hash = artwork_module.extract_and_cache(file_str)
+
+    # Store in database
+    track_data = {
+        'file_path': file_str,
+        'file_mtime': mtime,
+        'sha1_hash': file_hash,
+        'has_artwork': 1 if has_art else 0,
+        'artwork_hash': art_hash,
+        'is_podcast': 1 if is_podcast else 0,
+        **meta,
+    }
+    models.upsert_track(track_data)
+
+    return {'status': 'added', 'track_data': track_data}
+
+
 def scan_directory(library_path, progress_callback=None, is_podcast=False):
     """Scan a directory for audio files and store metadata in the database.
 
@@ -265,48 +327,7 @@ def scan_directory(library_path, progress_callback=None, is_podcast=False):
                 progress_callback(scanned, total, file_str)
             continue
 
-        # Extract metadata
-        meta = _extract_metadata(file_str)
-        if meta is None:
-            continue
-
-        # Check if file has meaningful metadata (beyond just filename/duration)
-        has_metadata = bool(
-            meta.get('artist') or
-            meta.get('album') or
-            meta.get('album_artist') or
-            meta.get('genre') or
-            meta.get('year') or
-            meta.get('track_nr')
-        )
-
-        # If no metadata, check user setting
-        if not has_metadata:
-            allow_no_metadata = models.get_setting('allow_files_without_metadata')
-            # Default to '0' (disallow) if not set - only add files with metadata by default
-            if allow_no_metadata != '1':
-                continue  # Skip file
-
-        # Compute hash for duplicate detection
-        try:
-            file_hash = sha1_hash(file_str)
-        except OSError:
-            continue
-
-        # Extract and cache artwork
-        has_art, art_hash = artwork_module.extract_and_cache(file_str)
-
-        # Store in database
-        track_data = {
-            'file_path': file_str,
-            'file_mtime': mtime,
-            'sha1_hash': file_hash,
-            'has_artwork': 1 if has_art else 0,
-            'artwork_hash': art_hash,
-            'is_podcast': 1 if is_podcast else 0,
-            **meta,
-        }
-        models.upsert_track(track_data)
+        process_single_file(file_path, is_podcast=is_podcast)
 
         if progress_callback and scanned % 10 == 0:
             progress_callback(scanned, total, file_str)
