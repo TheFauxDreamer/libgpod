@@ -8,7 +8,6 @@ var Player = {
     queueIndex: -1,
     isPlaying: false,
     currentTrackId: null,
-    _skipTimeout: null,
 
     init: function() {
         Player.audio = document.getElementById('player-audio');
@@ -26,20 +25,22 @@ var Player = {
             document.getElementById('player-play').innerHTML = '&#9654;';
         });
         Player.audio.addEventListener('error', function() {
-            // Ignore errors with no MediaError (stale events from aborted loads)
+            // Ignore errors with no MediaError
             if (!Player.audio.error) return;
+            // MEDIA_ERR_ABORTED (code 1) fires when src changes — not a real error
+            if (Player.audio.error.code === 1) return;
 
-            var errorTrackId = Player.currentTrackId;
-            WebPod.toast('Playback error', 'error');
-
-            if (Player.queueIndex < Player.queue.length - 1) {
-                Player._skipTimeout = setTimeout(function() {
-                    // Only skip if still on the track that errored
-                    if (Player.currentTrackId === errorTrackId) {
-                        Player.next();
-                    }
-                }, 500);
+            // Show error message but don't auto-skip
+            // User can manually click Next if desired
+            var msg = 'Cannot play this track';
+            if (Player.audio.error.code === 4) {
+                msg = 'Format not supported';
+            } else if (Player.audio.error.code === 3) {
+                msg = 'Decode error';
+            } else if (Player.audio.error.code === 2) {
+                msg = 'Network error';
             }
+            WebPod.toast(msg, 'error');
         });
 
         // Control buttons
@@ -83,12 +84,6 @@ var Player = {
      * Load a track into the audio element and start playback
      */
     loadAndPlay: function(track) {
-        // Cancel any pending error-skip timeout
-        if (Player._skipTimeout) {
-            clearTimeout(Player._skipTimeout);
-            Player._skipTimeout = null;
-        }
-
         Player.currentTrackId = track.id;
 
         // Pause before changing src to avoid abort-related error events
