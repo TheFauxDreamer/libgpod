@@ -1976,3 +1976,383 @@ tr.playing,
     display: none;
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/* ─── iPod Mode ─────────────────────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Body class for iPod mode */
+body.ipod-mode {
+    --ipod-mode-accent: #4a9eff;
+}
+
+body.ipod-mode #status-bar {
+    background: linear-gradient(180deg, var(--bg-secondary) 0%, rgba(74, 158, 255, 0.08) 100%);
+    border-bottom-color: var(--ipod-mode-accent);
+}
+
+body.ipod-mode #ipod-icon {
+    color: var(--ipod-mode-accent);
+}
+
+/* iPod Mode Sidebar */
+#sidebar-ipod {
+    width: var(--sidebar-width);
+    background: var(--bg-sidebar);
+    border-right: 1px solid var(--border-color);
+    overflow-y: auto;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-back {
+    border-bottom: 1px solid var(--border-color);
+}
+
+.sidebar-back .btn {
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+}
+
+.back-arrow {
+    font-size: 14px;
+}
+
+/* iPod Info Section */
+.ipod-info-section {
+    padding: 16px;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.ipod-device-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.ipod-device-img {
+    width: 50px;
+    height: auto;
+    max-height: 80px;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+
+.ipod-device-name-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.ipod-device-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-bright);
+}
+
+.ipod-gen-tag {
+    display: inline-flex;
+    align-items: center;
+    background-color: rgba(var(--accent-rgb), 0.15);
+    color: var(--accent);
+    border: 1px solid rgba(var(--accent-rgb), 0.3);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.ipod-gen-tag:empty {
+    display: none;
+}
+
+.ipod-storage-text {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+}
+
+/* Storage Bar */
+.storage-bar {
+    height: 6px;
+    background: var(--border-color);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.storage-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent) 0%, var(--ipod-mode-accent, var(--accent)) 100%);
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+/* iPod Navigation List */
+.ipod-nav-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.ipod-nav-list li {
+    padding: 8px 16px;
+    font-size: 13px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-radius: var(--radius);
+    margin: 2px 8px;
+    color: var(--text-primary);
+}
+
+.ipod-nav-list li:hover {
+    background: var(--bg-hover);
+}
+
+.ipod-nav-list li.active {
+    background: var(--bg-selected);
+    color: var(--text-bright);
+}
+
+.ipod-nav-list .nav-icon {
+    width: 20px;
+    text-align: center;
+    font-size: 14px;
+}
+
+/* iPod Mode Playlists in sidebar */
+#ipod-mode-playlists-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+#ipod-mode-playlists-list li {
+    padding: 6px 16px;
+    font-size: 13px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: var(--radius);
+    margin: 2px 8px;
+}
+
+#ipod-mode-playlists-list li:hover {
+    background: var(--bg-hover);
+}
+
+#ipod-mode-playlists-list li.selected {
+    background: var(--bg-selected);
+    color: var(--text-bright);
+}
+
+#ipod-mode-playlists-list .playlist-name {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#ipod-mode-playlists-list .playlist-count {
+    font-size: 11px;
+    color: var(--text-secondary);
+    background: var(--bg-secondary);
+    padding: 2px 6px;
+    border-radius: 10px;
+}
+
+/* iPod Mode Toolbar */
+#toolbar-ipod {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 16px;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0;
+}
+
+.ipod-mode-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--ipod-mode-accent, var(--accent));
+}
+
+.ipod-mode-icon {
+    font-size: 18px;
+}
+
+#toolbar-ipod .toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#toolbar-ipod #ipod-search-input {
+    width: 200px;
+}
+
+/* iPod Selection Actions */
+#ipod-selection-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Danger button for remove action */
+.btn-danger {
+    background: #e53e3e;
+    color: white;
+    border-color: #e53e3e;
+}
+
+.btn-danger:hover {
+    background: #c53030;
+    border-color: #c53030;
+}
+
+/* Actions section at bottom of sidebar */
+.sidebar-actions-section {
+    margin-top: auto;
+    padding: 16px;
+    border-top: 1px solid var(--border-color);
+}
+
+.sidebar-actions-section .btn {
+    margin-bottom: 8px;
+}
+
+.sidebar-actions-section .btn:last-child {
+    margin-bottom: 0;
+}
+
+/* iPod Artists List */
+.artists-list {
+    padding: 0;
+}
+
+.artist-item {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-color);
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.artist-item:hover {
+    background: var(--bg-hover);
+}
+
+.artist-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-bright);
+}
+
+.artist-meta {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+/* iPod Genres List */
+.genres-list {
+    padding: 0;
+}
+
+.genre-item {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-color);
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.genre-item:hover {
+    background: var(--bg-hover);
+}
+
+.genre-name {
+    font-size: 14px;
+    color: var(--text-bright);
+}
+
+.genre-count {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+/* Playlist Header */
+.playlist-header {
+    padding: 16px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+}
+
+.playlist-header h2 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-bright);
+    margin: 0;
+}
+
+#ipod-playlist-count {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+/* Selection checkbox in table */
+.col-select {
+    width: 40px;
+    text-align: center;
+}
+
+.col-select input[type="checkbox"] {
+    cursor: pointer;
+}
+
+/* iPod All Songs table rows */
+#ipod-all-songs-tbody tr {
+    cursor: pointer;
+}
+
+#ipod-all-songs-tbody tr:hover {
+    background: var(--bg-hover);
+}
+
+#ipod-all-songs-tbody tr.selected {
+    background: var(--bg-selected);
+}
+
+/* iPod Albums Grid - uses same styles as library albums grid */
+#ipod-albums-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 20px;
+    padding: 16px;
+}
+
+/* iPod scroll container */
+#ipod-all-songs-scroll-container {
+    overflow-y: auto;
+    max-height: 100%;
+}
+

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 90" fill="none">
+  <!-- iPod Mini 1st Gen (2004) - Aluminum colored, small click wheel -->
+  <rect x="4" y="4" width="42" height="82" rx="5" fill="#a8c8e0" stroke="#88a8c0" stroke-width="1.5"/>
+  <!-- Display -->
+  <rect x="8" y="8" width="34" height="26" rx="2" fill="#1a1a1a"/>
+  <!-- Mini click wheel -->
+  <circle cx="25" cy="58" r="15" fill="#c8e0f0" stroke="#a8c0d8" stroke-width="1.5"/>
+  <rect x="23" y="46" width="4" height="3" rx="1" fill="#bbd8e8"/>
+  <rect x="23" y="66" width="4" height="3" rx="1" fill="#bbd8e8"/>
+  <rect x="13" y="56" width="3" height="4" rx="1" fill="#bbd8e8"/>
+  <rect x="34" y="56" width="3" height="4" rx="1" fill="#bbd8e8"/>
+  <circle cx="25" cy="58" r="4" fill="#b8d0e0"/>
+</svg>

@@ -15,6 +15,7 @@ var WebPod = {
     selectedFormats: ['all'],  // Default to all formats
     lastSearchQuery: '',  // Track last search to avoid duplicate calls
     currentSearchQuery: null,  // Track current in-flight search query to avoid race conditions
+    ipodMode: false,  // iPod Mode - dedicated iPod content view
 
     /**
      * Show a toast notification
@@ -216,6 +217,66 @@ var WebPod = {
                 IPod.loadTracks();
             }
         }
+    },
+
+    /**
+     * Enter iPod Mode - dedicated interface showing only iPod content
+     */
+    enterIpodMode: function() {
+        if (!IPod.connected) {
+            WebPod.toast('No iPod connected', 'warning');
+            return;
+        }
+
+        WebPod.ipodMode = true;
+        document.body.classList.add('ipod-mode');
+
+        // Hide library sidebar, show iPod sidebar
+        document.getElementById('sidebar').classList.add('hidden');
+        document.getElementById('sidebar-ipod').classList.remove('hidden');
+
+        // Hide library toolbar, show iPod toolbar
+        document.getElementById('toolbar').classList.add('hidden');
+        document.getElementById('toolbar-ipod').classList.remove('hidden');
+
+        // Hide all library views
+        ['albums-view', 'tracks-view', 'podcasts-view', 'search-view', 'ipod-tracks-view'].forEach(function(id) {
+            var el = document.getElementById(id);
+            if (el) el.classList.add('hidden');
+        });
+
+        // Load iPod info and default view
+        if (typeof IPodMode !== 'undefined') {
+            IPodMode.loadDeviceInfo();
+            IPodMode.loadPlaylists();
+            IPodMode.switchView('ipod-all-songs');
+        }
+    },
+
+    /**
+     * Exit iPod Mode - return to Library view
+     */
+    exitIpodMode: function() {
+        WebPod.ipodMode = false;
+        document.body.classList.remove('ipod-mode');
+
+        // Show library sidebar, hide iPod sidebar
+        document.getElementById('sidebar').classList.remove('hidden');
+        document.getElementById('sidebar-ipod').classList.add('hidden');
+
+        // Show library toolbar, hide iPod toolbar
+        document.getElementById('toolbar').classList.remove('hidden');
+        document.getElementById('toolbar-ipod').classList.add('hidden');
+
+        // Hide iPod mode views
+        ['ipod-all-songs-view', 'ipod-albums-view', 'ipod-artists-view',
+         'ipod-genres-view', 'ipod-playlist-view'].forEach(function(id) {
+            var el = document.getElementById(id);
+            if (el) el.classList.add('hidden');
+        });
+
+        // Return to albums view
+        WebPod.switchView('albums');
     },
 
     /**
@@ -568,6 +629,113 @@ var WebPod = {
         if (data.albums.length === 0 && data.tracks.length === 0 && data.podcasts.length === 0) {
             WebPod.showSearchEmptyState();
         }
+
+        // Update format filter with available formats from search results
+        if (data.available_formats) {
+            WebPod.updateFormatFilter(data.available_formats);
+        }
+    },
+
+    /**
+     * Update format filter dropdown with formats from search results
+     */
+    updateFormatFilter: function(formats) {
+        var dropdown = document.getElementById('format-filter-dropdown');
+        var optionsContainer = dropdown.querySelector('.format-filter-options');
+        if (!optionsContainer || !formats.length) return;
+
+        // Remember currently selected formats
+        var currentlySelected = WebPod.selectedFormats.slice();
+        var wasAll = currentlySelected[0] === 'all';
+
+        // Clear and rebuild
+        optionsContainer.innerHTML = '';
+
+        // Add "All Formats" checkbox
+        var allLabel = document.createElement('label');
+        allLabel.className = 'format-checkbox';
+        var allCheckbox = document.createElement('input');
+        allCheckbox.type = 'checkbox';
+        allCheckbox.value = 'all';
+        allCheckbox.checked = wasAll;
+        allCheckbox.setAttribute('data-format-all', '');
+        var allSpan = document.createElement('span');
+        allSpan.textContent = 'All Formats';
+        allLabel.appendChild(allCheckbox);
+        allLabel.appendChild(allSpan);
+        optionsContainer.appendChild(allLabel);
+
+        // Add divider
+        var divider = document.createElement('div');
+        divider.className = 'dropdown-divider';
+        optionsContainer.appendChild(divider);
+
+        // Add checkboxes for each available format
+        formats.forEach(function(format) {
+            var formatLabel = document.createElement('label');
+            formatLabel.className = 'format-checkbox';
+            var formatCheckbox = document.createElement('input');
+            formatCheckbox.type = 'checkbox';
+            formatCheckbox.value = format;
+            // Check if was previously selected or if "all" was selected
+            formatCheckbox.checked = wasAll || currentlySelected.indexOf(format) !== -1;
+            var formatSpan = document.createElement('span');
+            formatSpan.textContent = format.toUpperCase();
+            formatLabel.appendChild(formatCheckbox);
+            formatLabel.appendChild(formatSpan);
+            optionsContainer.appendChild(formatLabel);
+        });
+
+        // Re-attach event handlers to new checkboxes
+        var checkboxes = optionsContainer.querySelectorAll('input[type="checkbox"]');
+        var newAllCheckbox = optionsContainer.querySelector('[data-format-all]');
+
+        checkboxes.forEach(function(checkbox) {
+            checkbox.addEventListener('change', function() {
+                if (checkbox === newAllCheckbox) {
+                    if (checkbox.checked) {
+                        checkboxes.forEach(function(cb) { cb.checked = true; });
+                        WebPod.selectedFormats = ['all'];
+                        document.getElementById('format-filter-label').textContent = 'All Formats';
+                    }
+                } else {
+                    // Prevent unchecking the last format
+                    var checkedIndividuals = Array.from(checkboxes).filter(function(cb) {
+                        return cb !== newAllCheckbox && cb.checked;
+                    });
+
+                    if (checkedIndividuals.length === 0) {
+                        checkbox.checked = true;
+                        return;
+                    }
+
+                    // Uncheck "All" when individual format is unchecked
+                    if (!checkbox.checked && newAllCheckbox.checked) {
+                        newAllCheckbox.checked = false;
+                    }
+
+                    // Update selected formats
+                    WebPod.selectedFormats = checkedIndividuals.map(function(cb) {
+                        return cb.value;
+                    });
+
+                    // Update label
+                    if (WebPod.selectedFormats.length === formats.length) {
+                        newAllCheckbox.checked = true;
+                        WebPod.selectedFormats = ['all'];
+                        document.getElementById('format-filter-label').textContent = 'All Formats';
+                    } else {
+                        document.getElementById('format-filter-label').textContent =
+                            WebPod.selectedFormats.map(function(f) { return f.toUpperCase(); }).join(', ');
+                    }
+
+                    // Trigger search refresh
+                    if (WebPod.lastSearchQuery) {
+                        WebPod.performSearch(WebPod.lastSearchQuery);
+                    }
+                }
+            });
+        });
     },
 
     /**
@@ -851,34 +1019,69 @@ var WebPod = {
             });
         });
 
-        // Setup: Save & Scan button
-        var setupSaveScanBtn = document.getElementById('setup-save-scan');
-        setupSaveScanBtn.addEventListener('click', function() {
-            var musicPath = musicInput.value.trim();
-            var podcastPath = podcastInput.value.trim();
-            var exportPath = exportInput.value.trim();
+        // Helper function to save all settings from all categories
+        function saveAllSettings() {
+            // Gather all settings
+            var allSettings = {
+                // Setup
+                music_path: musicInput.value.trim(),
+                podcast_path: podcastInput.value.trim(),
+                export_path: exportInput.value.trim(),
+                // Themes
+                theme: themeSelect.value,
+                accent_color: accentColorSelect.value,
+                colorful_albums: colorfulAlbumsCheckbox.checked,
+                mini_player: miniPlayerCheckbox.checked,
+                compact_disc_view: compactDiscViewCheckbox.checked,
+                // Music
+                show_format_tags: formatTagsCheckbox.checked,
+                allow_files_without_metadata: allowNoMetadataCheckbox.checked,
+                transcode_flac_to_ipod: transcodeFlacCheckbox.checked,
+                transcode_flac_format: transcodeFlacFormat.value
+            };
 
-            // Save only Setup category settings
-            WebPod.api('/api/settings', {
+            return WebPod.api('/api/settings', {
                 method: 'POST',
-                body: {
-                    music_path: musicPath,
-                    podcast_path: podcastPath,
-                    export_path: exportPath
-                }
+                body: allSettings
             }).then(function() {
                 // Update local state
-                WebPod.musicPath = musicPath;
-                WebPod.podcastPath = podcastPath;
-                WebPod.exportPath = exportPath;
+                WebPod.musicPath = allSettings.music_path;
+                WebPod.podcastPath = allSettings.podcast_path;
+                WebPod.exportPath = allSettings.export_path;
+                WebPod.theme = allSettings.theme;
+                WebPod.applyTheme();
+                WebPod.accentColor = allSettings.accent_color;
+                WebPod.applyAccentColor();
+                WebPod.colorfulAlbums = allSettings.colorful_albums;
+                WebPod.miniPlayer = allSettings.mini_player;
+                WebPod.applyMiniPlayer();
+                WebPod.compactDiscView = allSettings.compact_disc_view;
+                WebPod.showFormatTags = allSettings.show_format_tags;
+                WebPod.allowFilesWithoutMetadata = allSettings.allow_files_without_metadata;
+                WebPod.transcodeFlacToIpod = allSettings.transcode_flac_to_ipod;
+                WebPod.transcodeFlacFormat = allSettings.transcode_flac_format;
 
-                // Reload settings to update UI
                 WebPod.loadSettings();
 
+                // Reload current view to apply changes
+                if (WebPod.currentView === 'albums') {
+                    Library.loadAlbums();
+                } else if (WebPod.currentView === 'tracks') {
+                    Library.loadTracks();
+                }
+
+                return allSettings;
+            });
+        }
+
+        // Setup: Save & Scan button - saves ALL settings and triggers scans
+        var setupSaveScanBtn = document.getElementById('setup-save-scan');
+        setupSaveScanBtn.addEventListener('click', function() {
+            saveAllSettings().then(function(settings) {
                 WebPod.toast('Settings saved', 'success');
 
-                // Trigger scans for Setup category only
-                if (musicPath) {
+                // Trigger scans
+                if (settings.music_path) {
                     musicScanBtn.disabled = true;
                     musicScanBtn.textContent = 'Scanning...';
                     WebPod.api('/api/library/scan', { method: 'POST' }).catch(function() {
@@ -887,7 +1090,7 @@ var WebPod = {
                     });
                 }
 
-                if (podcastPath) {
+                if (settings.podcast_path) {
                     podcastScanBtn.disabled = true;
                     podcastScanBtn.textContent = 'Scanning...';
                     WebPod.api('/api/library/scan-podcasts', { method: 'POST' }).catch(function() {
@@ -900,81 +1103,21 @@ var WebPod = {
             });
         });
 
-        // Themes: Save button (no scan)
+        // Themes: Save button - saves ALL settings (no scan)
         var themesSaveBtn = document.getElementById('themes-save');
         themesSaveBtn.addEventListener('click', function() {
-            var theme = themeSelect.value;
-            var accentColor = accentColorSelect.value;
-            var colorfulAlbums = colorfulAlbumsCheckbox.checked;
-            var miniPlayer = miniPlayerCheckbox.checked;
-            var compactDiscView = compactDiscViewCheckbox.checked;
-
-            // Save only Themes category settings
-            WebPod.api('/api/settings', {
-                method: 'POST',
-                body: {
-                    theme: theme,
-                    accent_color: accentColor,
-                    colorful_albums: colorfulAlbums,
-                    mini_player: miniPlayer,
-                    compact_disc_view: compactDiscView
-                }
-            }).then(function() {
-                // Update local state and apply immediately
-                WebPod.theme = theme;
-                WebPod.applyTheme();
-                WebPod.accentColor = accentColor;
-                WebPod.applyAccentColor();
-                WebPod.colorfulAlbums = colorfulAlbums;
-                WebPod.miniPlayer = miniPlayer;
-                WebPod.applyMiniPlayer();
-                WebPod.compactDiscView = compactDiscView;
-
-                WebPod.loadSettings();
-                WebPod.toast('Theme settings saved', 'success');
-
-                // Reload current view to apply colorful albums change
-                if (WebPod.currentView === 'albums') {
-                    Library.loadAlbums();
-                }
+            saveAllSettings().then(function() {
+                WebPod.toast('Settings saved', 'success');
             }).catch(function(err) {
                 WebPod.toast('Failed to save settings', 'error');
             });
         });
 
-        // Music: Save button (no scan)
+        // Music: Save button - saves ALL settings (no scan)
         var musicSaveBtn = document.getElementById('music-save');
         musicSaveBtn.addEventListener('click', function() {
-            var showFormatTags = formatTagsCheckbox.checked;
-            var allowNoMetadata = allowNoMetadataCheckbox.checked;
-            var transcodeFlac = transcodeFlacCheckbox.checked;
-            var transcodeFormat = transcodeFlacFormat.value;
-
-            // Save only Music category settings
-            WebPod.api('/api/settings', {
-                method: 'POST',
-                body: {
-                    show_format_tags: showFormatTags,
-                    allow_files_without_metadata: allowNoMetadata,
-                    transcode_flac_to_ipod: transcodeFlac,
-                    transcode_flac_format: transcodeFormat
-                }
-            }).then(function() {
-                // Update local state
-                WebPod.showFormatTags = showFormatTags;
-                WebPod.allowFilesWithoutMetadata = allowNoMetadata;
-                WebPod.transcodeFlacToIpod = transcodeFlac;
-                WebPod.transcodeFlacFormat = transcodeFormat;
-
-                WebPod.loadSettings();
-                WebPod.toast('Music settings saved', 'success');
-
-                // Reload current view to apply format tag changes
-                if (WebPod.currentView === 'albums') {
-                    Library.loadAlbums();
-                } else if (WebPod.currentView === 'tracks') {
-                    Library.loadTracks();
-                }
+            saveAllSettings().then(function() {
+                WebPod.toast('Settings saved', 'success');
             }).catch(function(err) {
                 WebPod.toast('Failed to save settings', 'error');
             });

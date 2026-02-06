@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 90" fill="none">
+  <!-- iPod Mini 2nd Gen (2005) - Longer battery life, same design -->
+  <rect x="4" y="4" width="42" height="82" rx="5" fill="#c0e0c0" stroke="#a0c0a0" stroke-width="1.5"/>
+  <!-- Display -->
+  <rect x="8" y="8" width="34" height="26" rx="2" fill="#1a1a1a"/>
+  <!-- Mini click wheel -->
+  <circle cx="25" cy="58" r="15" fill="#d0f0d0" stroke="#b0d0b0" stroke-width="1.5"/>
+  <rect x="23" y="46" width="4" height="3" rx="1" fill="#c0e0c0"/>
+  <rect x="23" y="66" width="4" height="3" rx="1" fill="#c0e0c0"/>
+  <rect x="13" y="56" width="3" height="4" rx="1" fill="#c0e0c0"/>
+  <rect x="34" y="56" width="3" height="4" rx="1" fill="#c0e0c0"/>
+  <circle cx="25" cy="58" r="4" fill="#b8d8b8"/>
+</svg>

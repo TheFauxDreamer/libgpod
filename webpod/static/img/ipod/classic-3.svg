@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 100" fill="none">
+  <!-- iPod 3rd Gen (2003) - Touch buttons above wheel, dock connector -->
+  <rect x="5" y="5" width="50" height="90" rx="6" fill="#ffffff" stroke="#ddd" stroke-width="2"/>
+  <rect x="10" y="10" width="40" height="30" rx="3" fill="#1a1a1a"/>
+  <!-- Touch buttons row -->
+  <rect x="12" y="44" width="8" height="4" rx="1" fill="#f0f0f0" stroke="#ccc"/>
+  <rect x="22" y="44" width="8" height="4" rx="1" fill="#f0f0f0" stroke="#ccc"/>
+  <rect x="32" y="44" width="8" height="4" rx="1" fill="#f0f0f0" stroke="#ccc"/>
+  <rect x="42" y="44" width="8" height="4" rx="1" fill="#f0f0f0" stroke="#ccc"/>
+  <!-- Touch wheel -->
+  <circle cx="30" cy="70" r="16" fill="#f0f0f0" stroke="#ccc" stroke-width="1.5"/>
+  <circle cx="30" cy="70" r="6" fill="#e8e8e8"/>
+</svg>

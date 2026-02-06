@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 70" fill="none">
+  <!-- iPod Nano 3rd Gen (2007) - "Fat" nano, wide screen -->
+  <rect x="3" y="3" width="44" height="64" rx="5" fill="#1a1a1a" stroke="#333" stroke-width="1.5"/>
+  <!-- Wide display -->
+  <rect x="6" y="6" width="38" height="30" rx="2" fill="#222"/>
+  <rect x="7" y="7" width="36" height="28" rx="1.5" fill="#2a2a2a"/>
+  <!-- Click wheel -->
+  <circle cx="25" cy="52" r="11" fill="#2a2a2a" stroke="#444" stroke-width="1"/>
+  <circle cx="25" cy="52" r="3.5" fill="#333"/>
+</svg>

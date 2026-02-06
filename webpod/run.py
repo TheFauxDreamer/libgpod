@@ -119,10 +119,23 @@ def main():
             except (ValueError, IndexError):
                 pass
 
+    # Get local IP for network access
+    local_ip = None
+    try:
+        import socket
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(('8.8.8.8', 80))
+        local_ip = s.getsockname()[0]
+        s.close()
+    except Exception:
+        pass
+
     print("=" * 50)
     print("  WebPod - iPod Web Manager")
     print("=" * 50)
-    print(f"  Running at: http://localhost:{port}")
+    print(f"  Local:   http://localhost:{port}")
+    if local_ip:
+        print(f"  Network: http://{local_ip}:{port}")
     print("  Press Ctrl+C to stop")
     print("=" * 50)
     print()

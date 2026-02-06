@@ -149,9 +149,12 @@ class IPodManager:
         with self._lock:
             if not self.connected:
                 return {"connected": False}
+            # Extract name from mountpoint (last component of path)
+            name = os.path.basename(self._mountpoint.rstrip('/')) or 'iPod'
             return {
                 "connected": True,
                 "mountpoint": self._mountpoint,
+                "name": name,
                 "track_count": len(self._db),
             }
 
@@ -191,6 +194,182 @@ class IPodManager:
             for i in range(len(pl)):
                 tracks.append(self._track_to_dict(pl[i]))
             return tracks
+
+    def get_albums(self):
+        """Get all albums on the iPod, grouped by album name and artist.
+
+        Returns:
+            List of dicts with album, artist, track_count, year
+        """
+        with self._lock:
+            self._require_connected()
+            albums = {}
+            for i in range(len(self._db)):
+                track = self._db[i]
+                album_name = track['album'] or 'Unknown Album'
+                artist = track['artist'] or 'Unknown Artist'
+                key = f"{album_name}|||{artist}"
+
+                if key not in albums:
+                    albums[key] = {
+                        'album': album_name,
+                        'artist': artist,
+                        'track_count': 0,
+                        'year': track['year'],
+                    }
+                albums[key]['track_count'] += 1
+
+            # Sort by artist, then album name
+            return sorted(albums.values(), key=lambda x: (x['artist'].lower(), x['album'].lower()))
+
+    def get_artists(self):
+        """Get all artists on the iPod with album and track counts.
+
+        Returns:
+            List of dicts with name, album_count, track_count
+        """
+        with self._lock:
+            self._require_connected()
+            artists = {}
+            for i in range(len(self._db)):
+                track = self._db[i]
+                artist = track['artist'] or 'Unknown Artist'
+                album = track['album'] or 'Unknown Album'
+
+                if artist not in artists:
+                    artists[artist] = {
+                        'name': artist,
+                        'album_count': 0,
+                        'track_count': 0,
+                        'albums': set()
+                    }
+                artists[artist]['track_count'] += 1
+                artists[artist]['albums'].add(album)
+
+            # Convert album sets to counts
+            result = []
+            for artist in artists.values():
+                result.append({
+                    'name': artist['name'],
+                    'album_count': len(artist['albums']),
+                    'track_count': artist['track_count'],
+                })
+
+            return sorted(result, key=lambda x: x['name'].lower())
+
+    def get_genres(self):
+        """Get all genres on the iPod with track counts.
+
+        Returns:
+            List of dicts with name, track_count
+        """
+        with self._lock:
+            self._require_connected()
+            genres = {}
+            for i in range(len(self._db)):
+                track = self._db[i]
+                genre = track['genre'] or 'Unknown'
+
+                if genre not in genres:
+                    genres[genre] = {
+                        'name': genre,
+                        'track_count': 0
+                    }
+                genres[genre]['track_count'] += 1
+
+            return sorted(genres.values(), key=lambda x: x['name'].lower())
+
+    def get_album_tracks(self, album_name, artist=None):
+        """Get all tracks for a specific album on the iPod.
+
+        Args:
+            album_name: Album name to match
+            artist: Optional artist name for disambiguation
+
+        Returns:
+            List of track dicts sorted by disc/track number
+        """
+        with self._lock:
+            self._require_connected()
+            tracks = []
+            for i in range(len(self._db)):
+                track = self._db[i]
+                track_album = track['album'] or 'Unknown Album'
+                if track_album == album_name:
+                    # If artist specified, also match artist
+                    if artist is not None:
+                        track_artist = track['artist'] or 'Unknown Artist'
+                        if track_artist != artist:
+                            continue
+                    tracks.append(self._track_to_dict(track))
+
+            # Sort by disc number, then track number
+            tracks.sort(key=lambda t: (t.get('cd_nr') or 1, t.get('track_nr') or 0))
+            return tracks
+
+    def get_storage_info(self):
+        """Get iPod storage capacity and usage.
+
+        Returns:
+            Dict with total_bytes, used_bytes, free_bytes, and formatted GB values
+        """
+        with self._lock:
+            self._require_connected()
+
+            try:
+                usage = shutil.disk_usage(self._mountpoint)
+                return {
+                    'total_bytes': usage.total,
+                    'used_bytes': usage.used,
+                    'free_bytes': usage.free,
+                    'total_gb': round(usage.total / (1024**3), 1),
+                    'used_gb': round(usage.used / (1024**3), 1),
+                    'free_gb': round(usage.free / (1024**3), 1),
+                    'percent_used': round((usage.used / usage.total) * 100, 1)
+                }
+            except Exception as e:
+                return {
+                    'total_bytes': 0,
+                    'used_bytes': 0,
+                    'free_bytes': 0,
+                    'total_gb': 0,
+                    'used_gb': 0,
+                    'free_gb': 0,
+                    'percent_used': 0,
+                    'error': str(e)
+                }
+
+    def get_device_info(self):
+        """Get iPod device model and generation info.
+
+        Returns:
+            Dict with model, generation, capacity, model_string, generation_string
+        """
+        with self._lock:
+            self._require_connected()
+
+            try:
+                device = self._db._itdb.device
+                info = gpod.itdb_device_get_ipod_info(device)
+
+                if info:
+                    return {
+                        'model': info.ipod_model,
+                        'generation': info.ipod_generation,
+                        'capacity': info.capacity,
+                        'model_string': gpod.itdb_info_get_ipod_model_name_string(info.ipod_model),
+                        'generation_string': gpod.itdb_info_get_ipod_generation_string(info.ipod_generation),
+                    }
+            except Exception:
+                pass
+
+            return {
+                'model': 'unknown',
+                'generation': 'unknown',
+                'capacity': 0,
+                'model_string': 'Unknown iPod',
+                'generation_string': 'Unknown',
+            }
 
     def create_playlist(self, name):
         """Create a new playlist on the iPod."""

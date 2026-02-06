@@ -567,7 +567,38 @@ def search_all(query, formats=None, limit_albums=20, limit_tracks=40, limit_podc
         album_query += f" LIMIT {limit_albums}"
 
     cursor.execute(album_query, params)
-    results['albums'] = [dict(row) for row in cursor.fetchall()]
+    albums = [dict(row) for row in cursor.fetchall()]
+
+    # Get formats for found albums
+    if albums:
+        # Query for file paths of matched albums
+        album_names = [a['album'] for a in albums]
+        placeholders = ','.join(['?' for _ in album_names])
+        format_query = f"""
+            SELECT album, COALESCE(album_artist, artist) as group_artist, file_path
+            FROM library_tracks
+            WHERE album IN ({placeholders}) AND is_podcast = 0
+        """
+        cursor.execute(format_query, album_names)
+        format_rows = cursor.fetchall()
+
+        # Build format sets per album
+        album_formats = {}
+        for row in format_rows:
+            key = (row['album'], row['group_artist'])
+            fmt = _get_format(row['file_path'])
+            if key not in album_formats:
+                album_formats[key] = set()
+            if fmt:
+                album_formats[key].add(fmt)
+
+        # Attach formats to albums
+        for album in albums:
+            key = (album['album'], album.get('album_artist') or album.get('artist'))
+            fmts = album_formats.get(key, set())
+            album['formats'] = ','.join(sorted(fmts))
+
+    results['albums'] = albums
 
     # ─── Search Tracks ────────────────────────────────────────────────
     track_query = """
@@ -596,7 +627,12 @@ def search_all(query, formats=None, limit_albums=20, limit_tracks=40, limit_podc
         track_query += f" LIMIT {limit_tracks}"
 
     cursor.execute(track_query, track_params)
-    results['tracks'] = [dict(row) for row in cursor.fetchall()]
+    tracks = []
+    for row in cursor.fetchall():
+        track = dict(row)
+        track['format'] = _get_format(track.get('file_path', ''))
+        tracks.append(track)
+    results['tracks'] = tracks
 
     # ─── Search Podcasts ──────────────────────────────────────────────
     # Podcasts: series_name is computed from album/folder, so fetch all and filter in Python
@@ -664,6 +700,25 @@ def search_all(query, formats=None, limit_albums=20, limit_tracks=40, limit_podc
         results['podcasts'] = podcast_list[:limit_podcasts]
     else:
         results['podcasts'] = podcast_list
+
+    # ─── Get available formats in search results ─────────────────────
+    # Query for distinct formats in tracks matching the search (ignoring format filter)
+    conn = get_db()
+    cursor = conn.cursor()
+    format_query = """
+        SELECT DISTINCT file_path FROM library_tracks
+        WHERE (title LIKE ? OR artist LIKE ? OR album LIKE ? OR genre LIKE ?)
+    """
+    cursor.execute(format_query, [search_pattern, search_pattern, search_pattern, search_pattern])
+    format_rows = cursor.fetchall()
+    conn.close()
+
+    available_formats = set()
+    for row in format_rows:
+        fmt = _get_format(row['file_path'])
+        if fmt:
+            available_formats.add(fmt)
+    results['available_formats'] = sorted(available_formats)
 
     return results
 

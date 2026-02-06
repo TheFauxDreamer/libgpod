@@ -66,6 +66,67 @@
             </div>
         </aside>
 
+        <!-- iPod Mode Sidebar (hidden by default) -->
+        <aside id="sidebar-ipod" class="hidden">
+            <!-- Back to Library -->
+            <div class="sidebar-section sidebar-back">
+                <button id="back-to-library-btn" class="btn btn-small btn-block">
+                    <span class="back-arrow">←</span> Library
+                </button>
+            </div>
+
+            <!-- iPod Info -->
+            <div class="sidebar-section ipod-info-section">
+                <div class="ipod-device-info">
+                    <img id="ipod-mode-device-img" class="ipod-device-img" src="/static/img/ipod/unknown.svg" alt="iPod">
+                    <div class="ipod-device-text">
+                        <div class="ipod-device-name-row">
+                            <span id="ipod-mode-name" class="ipod-device-name">iPod</span>
+                            <span id="ipod-mode-gen-tag" class="ipod-gen-tag"></span>
+                        </div>
+                        <div id="ipod-mode-storage-text" class="ipod-storage-text">-- / -- GB</div>
+                    </div>
+                </div>
+                <div id="ipod-storage-bar" class="storage-bar">
+                    <div id="ipod-storage-fill" class="storage-fill"></div>
+                </div>
+            </div>
+
+            <!-- Browse Categories -->
+            <div class="sidebar-section">
+                <h3>Browse</h3>
+                <ul id="ipod-browse-list" class="ipod-nav-list">
+                    <li data-view="ipod-all-songs" class="active">
+                        <span class="nav-icon">♫</span> All Songs
+                    </li>
+                    <li data-view="ipod-albums">
+                        <span class="nav-icon">💿</span> Albums
+                    </li>
+                    <li data-view="ipod-artists">
+                        <span class="nav-icon">👤</span> Artists
+                    </li>
+                    <li data-view="ipod-genres">
+                        <span class="nav-icon">🎵</span> Genres
+                    </li>
+                </ul>
+            </div>
+
+            <!-- iPod Playlists -->
+            <div class="sidebar-section">
+                <h3>Playlists</h3>
+                <ul id="ipod-mode-playlists-list"></ul>
+                <div class="sidebar-actions">
+                    <button id="ipod-mode-new-playlist-btn" class="btn btn-small">+ New Playlist</button>
+                </div>
+            </div>
+
+            <!-- iPod Actions -->
+            <div class="sidebar-section sidebar-actions-section">
+                <button id="ipod-mode-sync-btn" class="btn btn-primary btn-block">Sync to iPod</button>
+                <button id="ipod-mode-export-btn" class="btn btn-small btn-block">Export All Music</button>
+            </div>
+        </aside>
+
         <!-- Main Content -->
         <main id="content">
             <!-- Toolbar -->
@@ -94,6 +155,32 @@
                         <option value="album">Album</option>
                         <option value="title">Title</option>
                         <option value="year">Year</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- iPod Mode Toolbar (hidden by default) -->
+            <div id="toolbar-ipod" class="hidden">
+                <div class="toolbar-left">
+                    <span class="ipod-mode-indicator">
+                        <span class="ipod-mode-icon">♫</span>
+                        <span id="toolbar-ipod-name">iPod</span>
+                    </span>
+                </div>
+                <div class="toolbar-center">
+                    <!-- Selection actions -->
+                    <div id="ipod-selection-actions" class="hidden">
+                        <button id="ipod-add-to-playlist-btn" class="btn btn-primary btn-small">Add to Playlist</button>
+                        <button id="ipod-remove-tracks-btn" class="btn btn-small btn-danger">Remove from iPod</button>
+                    </div>
+                </div>
+                <div class="toolbar-right">
+                    <input type="text" id="ipod-search-input" placeholder="Search iPod..." />
+                    <select id="ipod-sort-select">
+                        <option value="title">Title</option>
+                        <option value="artist">Artist</option>
+                        <option value="album">Album</option>
+                        <option value="genre">Genre</option>
                     </select>
                 </div>
             </div>
@@ -161,6 +248,65 @@
                         </tr>
                     </thead>
                     <tbody id="ipod-tracks-tbody"></tbody>
+                </table>
+            </div>
+
+            <!-- ═══════════════════════════════════════════════════════════════ -->
+            <!-- iPod Mode Views (shown when in iPod Mode) -->
+            <!-- ═══════════════════════════════════════════════════════════════ -->
+
+            <!-- iPod All Songs View -->
+            <div id="ipod-all-songs-view" class="content-view hidden">
+                <div id="ipod-all-songs-scroll-container">
+                    <table id="ipod-all-songs-table">
+                        <thead>
+                            <tr>
+                                <th class="col-select"><input type="checkbox" id="ipod-select-all"></th>
+                                <th class="col-title">Title</th>
+                                <th class="col-artist">Artist</th>
+                                <th class="col-album">Album</th>
+                                <th class="col-genre">Genre</th>
+                                <th class="col-duration">Duration</th>
+                                <th class="col-plays">Plays</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ipod-all-songs-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- iPod Albums View -->
+            <div id="ipod-albums-view" class="content-view hidden">
+                <div id="ipod-albums-grid" class="albums-grid"></div>
+            </div>
+
+            <!-- iPod Artists View -->
+            <div id="ipod-artists-view" class="content-view hidden">
+                <div id="ipod-artists-list" class="artists-list"></div>
+            </div>
+
+            <!-- iPod Genres View -->
+            <div id="ipod-genres-view" class="content-view hidden">
+                <div id="ipod-genres-list" class="genres-list"></div>
+            </div>
+
+            <!-- iPod Playlist View (individual playlist tracks) -->
+            <div id="ipod-playlist-view" class="content-view hidden">
+                <div class="playlist-header">
+                    <h2 id="ipod-playlist-name">Playlist</h2>
+                    <span id="ipod-playlist-count">0 tracks</span>
+                </div>
+                <table id="ipod-playlist-tracks-table">
+                    <thead>
+                        <tr>
+                            <th class="col-nr">#</th>
+                            <th class="col-title">Title</th>
+                            <th class="col-artist">Artist</th>
+                            <th class="col-album">Album</th>
+                            <th class="col-duration">Duration</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ipod-playlist-tracks-tbody"></tbody>
                 </table>
             </div>
 
@@ -232,6 +378,7 @@
                                     <th class="col-artist">Artist</th>
                                     <th class="col-album">Album</th>
                                     <th class="col-genre">Genre</th>
+                                    <th class="col-format">Format</th>
                                     <th class="col-duration">Duration</th>
                                 </tr>
                             </thead>

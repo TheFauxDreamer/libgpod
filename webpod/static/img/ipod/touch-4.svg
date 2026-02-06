@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 95" fill="none">
+  <!-- iPod Touch 4th Gen (2010) - Retina display, cameras -->
+  <rect x="3" y="3" width="44" height="89" rx="5" fill="#1a1a1a" stroke="#333" stroke-width="1.5"/>
+  <!-- Touchscreen -->
+  <rect x="5" y="8" width="40" height="68" rx="2" fill="#222"/>
+  <rect x="6" y="9" width="38" height="66" rx="1.5" fill="#2a2a2a"/>
+  <!-- Front camera -->
+  <circle cx="25" cy="5" r="1.5" fill="#333"/>
+  <!-- Home button -->
+  <circle cx="25" cy="85" r="5" fill="#2a2a2a" stroke="#444" stroke-width="1"/>
+</svg>

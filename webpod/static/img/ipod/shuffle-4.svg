@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 50" fill="none">
+  <!-- iPod Shuffle 4th Gen (2010) - Buttons return, colorful -->
+  <rect x="3" y="3" width="24" height="44" rx="4" fill="#e0a0e0" stroke="#c080c0" stroke-width="1.5"/>
+  <!-- Circular controls return -->
+  <circle cx="15" cy="25" r="10" fill="#f0c0f0" stroke="#d0a0d0" stroke-width="1"/>
+  <circle cx="15" cy="25" r="3" fill="#e0b0e0"/>
+  <!-- Button indicators -->
+  <rect x="14" y="17" width="2" height="2" rx="0.5" fill="#d0a0d0"/>
+  <rect x="14" y="31" width="2" height="2" rx="0.5" fill="#d0a0d0"/>
+  <rect x="7" y="24" width="2" height="2" rx="0.5" fill="#d0a0d0"/>
+  <rect x="21" y="24" width="2" height="2" rx="0.5" fill="#d0a0d0"/>
+  <!-- VoiceOver -->
+  <circle cx="15" cy="42" r="2" fill="#d0a0d0"/>
+  <!-- Clip -->
+  <rect x="0" y="15" width="3" height="20" rx="1" fill="#c080c0"/>
+</svg>

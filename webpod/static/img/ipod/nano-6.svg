@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 45 45" fill="none">
+  <!-- iPod Nano 6th Gen (2010) - Tiny square, touchscreen, clip -->
+  <rect x="3" y="3" width="39" height="39" rx="4" fill="#555" stroke="#444" stroke-width="1.5"/>
+  <!-- Touchscreen display -->
+  <rect x="5" y="5" width="35" height="35" rx="3" fill="#1a1a1a"/>
+  <rect x="6" y="6" width="33" height="33" rx="2.5" fill="#222"/>
+  <!-- Clip indicator on side -->
+  <rect x="0" y="15" width="3" height="15" rx="1" fill="#666"/>
+</svg>

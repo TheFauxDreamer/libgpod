@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 45 100" fill="none">
+  <!-- iPod Touch 5th Gen (2012) - Taller, colors, loop hole -->
+  <rect x="3" y="3" width="39" height="94" rx="5" fill="#3498db" stroke="#2980b9" stroke-width="1.5"/>
+  <!-- Black front -->
+  <rect x="4" y="4" width="37" height="92" rx="4.5" fill="#1a1a1a"/>
+  <!-- Touchscreen -->
+  <rect x="5" y="7" width="35" height="76" rx="2" fill="#222"/>
+  <rect x="6" y="8" width="33" height="74" rx="1.5" fill="#2a2a2a"/>
+  <!-- Front camera -->
+  <circle cx="22.5" cy="4.5" r="1.2" fill="#333"/>
+  <!-- Home button -->
+  <circle cx="22.5" cy="91" r="4" fill="#2a2a2a" stroke="#444" stroke-width="1"/>
+</svg>

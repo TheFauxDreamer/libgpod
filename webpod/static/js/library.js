@@ -173,17 +173,15 @@ var Library = {
         tdGenre.textContent = track.genre || '';
         tr.appendChild(tdGenre);
 
-        // Format (only in main tracks view)
-        if (!forSearch) {
-            var tdFormat = document.createElement('td');
-            if (WebPod.showFormatTags && track.format) {
-                var formatSpan = document.createElement('span');
-                formatSpan.className = 'format-tag';
-                formatSpan.textContent = track.format.toUpperCase();
-                tdFormat.appendChild(formatSpan);
-            }
-            tr.appendChild(tdFormat);
+        // Format
+        var tdFormat = document.createElement('td');
+        if (track.format) {
+            var formatSpan = document.createElement('span');
+            formatSpan.className = 'format-tag';
+            formatSpan.textContent = track.format.toUpperCase();
+            tdFormat.appendChild(formatSpan);
         }
+        tr.appendChild(tdFormat);
 
         // Duration
         var tdDuration = document.createElement('td');

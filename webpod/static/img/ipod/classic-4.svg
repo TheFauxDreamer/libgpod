@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 100" fill="none">
+  <!-- iPod 4th Gen (2004) - Click wheel, thinner, also Photo model -->
+  <rect x="5" y="5" width="50" height="90" rx="6" fill="#ffffff" stroke="#ddd" stroke-width="2"/>
+  <rect x="10" y="10" width="40" height="32" rx="3" fill="#1a1a1a"/>
+  <!-- Click wheel with integrated buttons -->
+  <circle cx="30" cy="67" r="18" fill="#f0f0f0" stroke="#ccc" stroke-width="1.5"/>
+  <!-- Button indicators -->
+  <rect x="28" y="52" width="4" height="4" rx="1" fill="#ddd"/>
+  <rect x="28" y="78" width="4" height="4" rx="1" fill="#ddd"/>
+  <rect x="15" y="65" width="4" height="4" rx="1" fill="#ddd"/>
+  <rect x="41" y="65" width="4" height="4" rx="1" fill="#ddd"/>
+  <circle cx="30" cy="67" r="6" fill="#e8e8e8"/>
+</svg>

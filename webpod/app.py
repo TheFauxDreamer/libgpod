@@ -586,6 +586,67 @@ def ipod_tracks():
         return jsonify({"error": str(e)}), 503
 
 
+@app.route('/api/ipod/albums', methods=['GET'])
+def ipod_albums():
+    """Get all albums on the iPod."""
+    try:
+        albums = ipod.get_albums()
+        return jsonify({"albums": albums})
+    except IPodError as e:
+        return jsonify({"error": str(e)}), 503
+
+
+@app.route('/api/ipod/albums/<path:album_name>/tracks', methods=['GET'])
+def ipod_album_tracks(album_name):
+    """Get tracks for a specific album on the iPod."""
+    try:
+        artist = request.args.get('artist')
+        tracks = ipod.get_album_tracks(album_name, artist=artist)
+        return jsonify({"tracks": tracks})
+    except IPodError as e:
+        return jsonify({"error": str(e)}), 503
+
+
+@app.route('/api/ipod/artists', methods=['GET'])
+def ipod_artists():
+    """Get all artists on the iPod."""
+    try:
+        artists = ipod.get_artists()
+        return jsonify({"artists": artists})
+    except IPodError as e:
+        return jsonify({"error": str(e)}), 503
+
+
+@app.route('/api/ipod/genres', methods=['GET'])
+def ipod_genres():
+    """Get all genres on the iPod."""
+    try:
+        genres = ipod.get_genres()
+        return jsonify({"genres": genres})
+    except IPodError as e:
+        return jsonify({"error": str(e)}), 503
+
+
+@app.route('/api/ipod/storage', methods=['GET'])
+def ipod_storage():
+    """Get iPod storage capacity and usage."""
+    try:
+        storage = ipod.get_storage_info()
+        return jsonify(storage)
+    except IPodError as e:
+        return jsonify({"error": str(e)}), 503
+
+
+@app.route('/api/ipod/device-info', methods=['GET'])
+def ipod_device_info():
+    """Get iPod device model and generation."""
+    try:
+        info = ipod.get_device_info()
+        return jsonify(info)
+    except IPodError as e:
+        return jsonify({"error": str(e)}), 503
+
+
 @app.route('/api/ipod/playlists', methods=['GET'])
 def ipod_playlists_list():
     try:
@@ -726,5 +787,5 @@ def ipod_export():
 
 def run(port=5000, debug=False):
     """Run the WebPod server."""
-    socketio.run(app, host='127.0.0.1', port=port, debug=debug,
+    socketio.run(app, host='0.0.0.0', port=port, debug=debug,
                  allow_unsafe_werkzeug=True)

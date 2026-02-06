@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 35 35" fill="none">
+  <!-- iPod Shuffle 2nd Gen (2006) - Small clip design, colorful -->
+  <rect x="3" y="3" width="29" height="29" rx="4" fill="#c0e0c0" stroke="#a0c0a0" stroke-width="1.5"/>
+  <!-- Circular control -->
+  <circle cx="17.5" cy="17.5" r="10" fill="#d0f0d0" stroke="#b0d0b0" stroke-width="1"/>
+  <circle cx="17.5" cy="17.5" r="3" fill="#c0e0c0"/>
+  <!-- Button indicators -->
+  <rect x="16" y="9" width="3" height="2" rx="0.5" fill="#b0d0b0"/>
+  <rect x="16" y="24" width="3" height="2" rx="0.5" fill="#b0d0b0"/>
+  <!-- Clip -->
+  <rect x="0" y="10" width="3" height="15" rx="1" fill="#a0c0a0"/>
+</svg>

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 100" fill="none">
+  <!-- iPod 5th Gen / Video (2005) - Thinner, larger screen, video capable -->
+  <rect x="6" y="4" width="48" height="92" rx="5" fill="#ffffff" stroke="#ddd" stroke-width="1.5"/>
+  <!-- Larger display for video -->
+  <rect x="10" y="8" width="40" height="38" rx="3" fill="#1a1a1a"/>
+  <!-- Thinner click wheel -->
+  <circle cx="30" cy="70" r="17" fill="#f0f0f0" stroke="#ccc" stroke-width="1.5"/>
+  <rect x="28" y="56" width="4" height="4" rx="1" fill="#ddd"/>
+  <rect x="28" y="80" width="4" height="4" rx="1" fill="#ddd"/>
+  <rect x="16" y="68" width="4" height="4" rx="1" fill="#ddd"/>
+  <rect x="40" y="68" width="4" height="4" rx="1" fill="#ddd"/>
+  <circle cx="30" cy="70" r="5" fill="#e8e8e8"/>
+</svg>
