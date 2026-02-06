@@ -36,7 +36,7 @@ var Player = {
             if (Player.audio.error.code === 4) {
                 msg = 'Format not supported';
             } else if (Player.audio.error.code === 3) {
-                msg = 'Decode error';
+                msg = 'Cannot decode audio (file may be DRM-protected)';
             } else if (Player.audio.error.code === 2) {
                 msg = 'Network error';
             }

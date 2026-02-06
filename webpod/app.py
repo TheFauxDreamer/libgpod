@@ -1,5 +1,6 @@
 """Flask application with SocketIO for the WebPod iPod manager."""
 
+import logging
 import os
 import re
 import shutil
@@ -8,6 +9,9 @@ from pathlib import Path
 
 from flask import Flask, jsonify, request, send_from_directory, send_file
 from flask_socketio import SocketIO
+
+# Suppress Flask/Werkzeug development server warning (fine for local desktop app)
+logging.getLogger('werkzeug').setLevel(logging.ERROR)
 
 from . import models
 from .artwork import get_artwork_path, init_artwork_cache, ARTWORK_CACHE_DIR
@@ -788,4 +792,4 @@ def ipod_export():
 def run(port=5000, debug=False):
     """Run the WebPod server."""
     socketio.run(app, host='0.0.0.0', port=port, debug=debug,
-                 allow_unsafe_werkzeug=True)
+                 allow_unsafe_werkzeug=True, log_output=False)

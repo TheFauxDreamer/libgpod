@@ -21,6 +21,7 @@ var WebPod = {
      * Show a toast notification
      */
     toast: function(message, type) {
+        if (WebPod.disableToasts) return;
         type = type || 'info';
         var el = document.getElementById('toast');
         el.textContent = message;
@@ -836,6 +837,7 @@ var WebPod = {
             WebPod.miniPlayer = data.mini_player === '1';
             WebPod.applyMiniPlayer();
             WebPod.compactDiscView = data.compact_disc_view === '1';
+            WebPod.disableToasts = data.disable_toasts === '1';
         }).catch(function() {
             // Settings not available
         });
@@ -857,6 +859,7 @@ var WebPod = {
         var colorfulAlbumsCheckbox = document.getElementById('colorful-albums');
         var miniPlayerCheckbox = document.getElementById('mini-player');
         var compactDiscViewCheckbox = document.getElementById('compact-disc-view');
+        var disableToastsCheckbox = document.getElementById('disable-toasts');
         var allowNoMetadataCheckbox = document.getElementById('allow-files-without-metadata');
         var transcodeFlacCheckbox = document.getElementById('transcode-flac-to-ipod');
         var transcodeFlacFormat = document.getElementById('transcode-flac-format');
@@ -918,6 +921,7 @@ var WebPod = {
             colorfulAlbumsCheckbox.checked = WebPod.colorfulAlbums !== false;  // Default to true
             miniPlayerCheckbox.checked = WebPod.miniPlayer === true;
             compactDiscViewCheckbox.checked = WebPod.compactDiscView === true;
+            disableToastsCheckbox.checked = WebPod.disableToasts === true;  // Default to false (toasts enabled)
             allowNoMetadataCheckbox.checked = WebPod.allowFilesWithoutMetadata === true;  // Default to false (unchecked)
             transcodeFlacCheckbox.checked = WebPod.transcodeFlacToIpod !== false;  // Default to true (enabled)
             transcodeFlacFormat.value = WebPod.transcodeFlacFormat || 'alac';  // Default to ALAC
@@ -1033,6 +1037,7 @@ var WebPod = {
                 colorful_albums: colorfulAlbumsCheckbox.checked,
                 mini_player: miniPlayerCheckbox.checked,
                 compact_disc_view: compactDiscViewCheckbox.checked,
+                disable_toasts: disableToastsCheckbox.checked,
                 // Music
                 show_format_tags: formatTagsCheckbox.checked,
                 allow_files_without_metadata: allowNoMetadataCheckbox.checked,
@@ -1056,6 +1061,7 @@ var WebPod = {
                 WebPod.miniPlayer = allSettings.mini_player;
                 WebPod.applyMiniPlayer();
                 WebPod.compactDiscView = allSettings.compact_disc_view;
+                WebPod.disableToasts = allSettings.disable_toasts;
                 WebPod.showFormatTags = allSettings.show_format_tags;
                 WebPod.allowFilesWithoutMetadata = allSettings.allow_files_without_metadata;
                 WebPod.transcodeFlacToIpod = allSettings.transcode_flac_to_ipod;
