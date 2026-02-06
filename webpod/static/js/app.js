@@ -649,8 +649,6 @@ var WebPod = {
     initSettingsModal: function() {
         var settingsBtn = document.getElementById('settings-btn');
         var dialog = document.getElementById('settings-dialog');
-        var saveBtn = document.getElementById('settings-save');
-        var closeBtn = document.getElementById('settings-close');
         var musicInput = document.getElementById('music-path-input');
         var podcastInput = document.getElementById('podcast-path-input');
         var exportInput = document.getElementById('export-path-input');
@@ -666,6 +664,39 @@ var WebPod = {
         var themeSelect = document.getElementById('theme-select');
         var accentColorSelect = document.getElementById('accent-color-select');
 
+        // Navigation elements
+        var navItems = dialog.querySelectorAll('.settings-nav li');
+        var categoryPanels = dialog.querySelectorAll('.settings-category');
+
+        // Category switching function
+        function switchCategory(categoryName) {
+            // Update nav active state
+            navItems.forEach(function(item) {
+                if (item.getAttribute('data-category') === categoryName) {
+                    item.classList.add('active');
+                } else {
+                    item.classList.remove('active');
+                }
+            });
+
+            // Show/hide category panels
+            categoryPanels.forEach(function(panel) {
+                if (panel.getAttribute('data-category') === categoryName) {
+                    panel.classList.remove('hidden');
+                } else {
+                    panel.classList.add('hidden');
+                }
+            });
+        }
+
+        // Setup nav click handlers
+        navItems.forEach(function(item) {
+            item.addEventListener('click', function() {
+                var category = item.getAttribute('data-category');
+                switchCategory(category);
+            });
+        });
+
         // Show/hide format dropdown based on checkbox
         transcodeFlacCheckbox.addEventListener('change', function() {
             if (transcodeFlacCheckbox.checked) {
@@ -677,6 +708,9 @@ var WebPod = {
 
         // Open settings dialog
         settingsBtn.addEventListener('click', function() {
+            // Reset to Setup category
+            switchCategory('setup');
+
             musicInput.value = WebPod.musicPath || '';
             podcastInput.value = WebPod.podcastPath || '';
             exportInput.value = WebPod.exportPath || '';
@@ -783,57 +817,33 @@ var WebPod = {
             });
         });
 
-        // Save settings and auto-scan
-        saveBtn.addEventListener('click', function() {
+        // Setup: Save & Scan button
+        var setupSaveScanBtn = document.getElementById('setup-save-scan');
+        setupSaveScanBtn.addEventListener('click', function() {
             var musicPath = musicInput.value.trim();
             var podcastPath = podcastInput.value.trim();
             var exportPath = exportInput.value.trim();
-            var showFormatTags = formatTagsCheckbox.checked;
-            var colorfulAlbums = colorfulAlbumsCheckbox.checked;
-            var allowNoMetadata = allowNoMetadataCheckbox.checked;
-            var transcodeFlac = transcodeFlacCheckbox.checked;
-            var transcodeFormat = transcodeFlacFormat.value;
-            var theme = themeSelect.value;
-            var accentColor = accentColorSelect.value;
 
+            // Save only Setup category settings
             WebPod.api('/api/settings', {
                 method: 'POST',
                 body: {
                     music_path: musicPath,
                     podcast_path: podcastPath,
-                    export_path: exportPath,
-                    show_format_tags: showFormatTags,
-                    colorful_albums: colorfulAlbums,
-                    allow_files_without_metadata: allowNoMetadata,
-                    transcode_flac_to_ipod: transcodeFlac,
-                    transcode_flac_format: transcodeFormat,
-                    theme: theme,
-                    accent_color: accentColor
+                    export_path: exportPath
                 }
             }).then(function() {
+                // Update local state
                 WebPod.musicPath = musicPath;
                 WebPod.podcastPath = podcastPath;
                 WebPod.exportPath = exportPath;
-                WebPod.showFormatTags = showFormatTags;
-                WebPod.colorfulAlbums = colorfulAlbums;
-                WebPod.allowFilesWithoutMetadata = allowNoMetadata;
-                WebPod.transcodeFlacToIpod = transcodeFlac;
-                WebPod.transcodeFlacFormat = transcodeFormat;
-                WebPod.theme = theme;
-                WebPod.applyTheme();
-                WebPod.accentColor = accentColor;
-                WebPod.applyAccentColor();
-                WebPod.loadSettings();
-                dialog.classList.add('hidden');
-                WebPod.toast('Settings saved', 'success');
-                // Reload current view to apply format tag changes
-                if (WebPod.currentView === 'albums') {
-                    Library.loadAlbums();
-                } else if (WebPod.currentView === 'tracks') {
-                    Library.loadTracks();
-                }
 
-                // Auto-scan music library if path is set
+                // Reload settings to update UI
+                WebPod.loadSettings();
+
+                WebPod.toast('Settings saved', 'success');
+
+                // Trigger scans for Setup category only
                 if (musicPath) {
                     musicScanBtn.disabled = true;
                     musicScanBtn.textContent = 'Scanning...';
@@ -843,7 +853,6 @@ var WebPod = {
                     });
                 }
 
-                // Auto-scan podcast library if path is set
                 if (podcastPath) {
                     podcastScanBtn.disabled = true;
                     podcastScanBtn.textContent = 'Scanning...';
@@ -852,12 +861,90 @@ var WebPod = {
                         podcastScanBtn.textContent = 'Scan Podcasts';
                     });
                 }
+            }).catch(function(err) {
+                WebPod.toast('Failed to save settings', 'error');
             });
         });
 
-        // Close dialog
-        closeBtn.addEventListener('click', function() {
-            dialog.classList.add('hidden');
+        // Themes: Save button (no scan)
+        var themesSaveBtn = document.getElementById('themes-save');
+        themesSaveBtn.addEventListener('click', function() {
+            var theme = themeSelect.value;
+            var accentColor = accentColorSelect.value;
+            var colorfulAlbums = colorfulAlbumsCheckbox.checked;
+
+            // Save only Themes category settings
+            WebPod.api('/api/settings', {
+                method: 'POST',
+                body: {
+                    theme: theme,
+                    accent_color: accentColor,
+                    colorful_albums: colorfulAlbums
+                }
+            }).then(function() {
+                // Update local state and apply immediately
+                WebPod.theme = theme;
+                WebPod.applyTheme();
+                WebPod.accentColor = accentColor;
+                WebPod.applyAccentColor();
+                WebPod.colorfulAlbums = colorfulAlbums;
+
+                WebPod.loadSettings();
+                WebPod.toast('Theme settings saved', 'success');
+
+                // Reload current view to apply colorful albums change
+                if (WebPod.currentView === 'albums') {
+                    Library.loadAlbums();
+                }
+            }).catch(function(err) {
+                WebPod.toast('Failed to save settings', 'error');
+            });
+        });
+
+        // Music: Save button (no scan)
+        var musicSaveBtn = document.getElementById('music-save');
+        musicSaveBtn.addEventListener('click', function() {
+            var showFormatTags = formatTagsCheckbox.checked;
+            var allowNoMetadata = allowNoMetadataCheckbox.checked;
+            var transcodeFlac = transcodeFlacCheckbox.checked;
+            var transcodeFormat = transcodeFlacFormat.value;
+
+            // Save only Music category settings
+            WebPod.api('/api/settings', {
+                method: 'POST',
+                body: {
+                    show_format_tags: showFormatTags,
+                    allow_files_without_metadata: allowNoMetadata,
+                    transcode_flac_to_ipod: transcodeFlac,
+                    transcode_flac_format: transcodeFormat
+                }
+            }).then(function() {
+                // Update local state
+                WebPod.showFormatTags = showFormatTags;
+                WebPod.allowFilesWithoutMetadata = allowNoMetadata;
+                WebPod.transcodeFlacToIpod = transcodeFlac;
+                WebPod.transcodeFlacFormat = transcodeFormat;
+
+                WebPod.loadSettings();
+                WebPod.toast('Music settings saved', 'success');
+
+                // Reload current view to apply format tag changes
+                if (WebPod.currentView === 'albums') {
+                    Library.loadAlbums();
+                } else if (WebPod.currentView === 'tracks') {
+                    Library.loadTracks();
+                }
+            }).catch(function(err) {
+                WebPod.toast('Failed to save settings', 'error');
+            });
+        });
+
+        // Close buttons (one per category)
+        var closeButtons = dialog.querySelectorAll('.settings-close-btn');
+        closeButtons.forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                dialog.classList.add('hidden');
+            });
         });
 
         // Close on overlay click

@@ -262,103 +262,153 @@
 
     <!-- Settings Dialog -->
     <div id="settings-dialog" class="dialog-overlay hidden">
-        <div class="dialog dialog-wide">
-            <h3>Settings</h3>
+        <div class="dialog dialog-settings">
+            <div class="settings-container">
+                <!-- Left Sidebar Navigation -->
+                <nav class="settings-sidebar">
+                    <h3>Settings</h3>
+                    <ul class="settings-nav">
+                        <li data-category="setup" class="active">
+                            <span class="nav-icon">📁</span>
+                            <span class="nav-label">Setup</span>
+                        </li>
+                        <li data-category="themes">
+                            <span class="nav-icon">🎨</span>
+                            <span class="nav-label">Themes</span>
+                        </li>
+                        <li data-category="music">
+                            <span class="nav-icon">🎵</span>
+                            <span class="nav-label">Music</span>
+                        </li>
+                    </ul>
+                </nav>
 
-            <div class="settings-group">
-                <label>Music Library Path</label>
-                <div class="path-input-row">
-                    <input type="text" id="music-path-input" placeholder="/path/to/music" />
+                <!-- Right Content Panel -->
+                <div class="settings-content">
+                    <!-- Setup Category (Default) -->
+                    <div class="settings-category" data-category="setup">
+                        <h2>Setup</h2>
+
+                        <div class="settings-group">
+                            <label>Music Library Path</label>
+                            <div class="path-input-row">
+                                <input type="text" id="music-path-input" placeholder="/path/to/music" />
+                            </div>
+                            <div class="settings-group-actions">
+                                <button id="music-scan-btn" class="btn btn-small" disabled>Scan Music</button>
+                                <span id="music-scan-status" class="scan-status"></span>
+                            </div>
+                        </div>
+
+                        <div class="settings-group">
+                            <label>Podcast Library Path</label>
+                            <div class="path-input-row">
+                                <input type="text" id="podcast-path-input" placeholder="/path/to/podcasts" />
+                            </div>
+                            <div class="settings-group-actions">
+                                <button id="podcast-scan-btn" class="btn btn-small" disabled>Scan Podcasts</button>
+                                <span id="podcast-scan-status" class="scan-status"></span>
+                            </div>
+                        </div>
+
+                        <div class="settings-group">
+                            <label>Export Destination</label>
+                            <div class="path-input-row">
+                                <input type="text" id="export-path-input" placeholder="./export" />
+                            </div>
+                            <div class="settings-group-actions">
+                                <button id="export-btn" class="btn btn-small" disabled>Export All Music from iPod</button>
+                                <span id="export-status" class="scan-status"></span>
+                            </div>
+                        </div>
+
+                        <div id="scan-progress-area" class="hidden">
+                            <div class="progress-bar-container">
+                                <div id="settings-progress-bar" class="progress-bar"></div>
+                            </div>
+                            <div id="settings-progress-text"></div>
+                        </div>
+
+                        <!-- Setup Actions -->
+                        <div class="settings-actions">
+                            <button id="setup-save-scan" class="btn btn-primary">Save & Scan</button>
+                            <button class="settings-close-btn btn">Close</button>
+                        </div>
+                    </div>
+
+                    <!-- Themes Category -->
+                    <div class="settings-category hidden" data-category="themes">
+                        <h2>Themes</h2>
+
+                        <div class="settings-group">
+                            <label>Theme</label>
+                            <select id="theme-select">
+                                <option value="light">Light</option>
+                                <option value="dark">Dark</option>
+                                <option value="auto">Auto (System)</option>
+                            </select>
+                        </div>
+
+                        <div class="settings-group">
+                            <label>Accent Color</label>
+                            <select id="accent-color-select">
+                                <option value="blue">Blue (Default)</option>
+                                <option value="rainbow">🌈 Rainbow (Animated)</option>
+                                <option value="red">Red</option>
+                                <option value="green">Green</option>
+                                <option value="orange">Orange</option>
+                                <option value="purple">Purple</option>
+                                <option value="cyan">Cyan</option>
+                                <option value="pink">Pink</option>
+                            </select>
+                        </div>
+
+                        <div class="settings-group checkbox-group">
+                            <input type="checkbox" id="colorful-albums" />
+                            <label for="colorful-albums">Colorful albums</label>
+                        </div>
+
+                        <!-- Themes Actions -->
+                        <div class="settings-actions">
+                            <button id="themes-save" class="btn btn-primary">Save</button>
+                            <button class="settings-close-btn btn">Close</button>
+                        </div>
+                    </div>
+
+                    <!-- Music Category -->
+                    <div class="settings-category hidden" data-category="music">
+                        <h2>Music</h2>
+
+                        <div class="settings-group checkbox-group">
+                            <input type="checkbox" id="show-format-tags" />
+                            <label for="show-format-tags">Show format tags (MP3, FLAC, etc.)</label>
+                        </div>
+
+                        <div class="settings-group checkbox-group">
+                            <input type="checkbox" id="allow-files-without-metadata" />
+                            <label for="allow-files-without-metadata">Allow songs without metadata</label>
+                        </div>
+
+                        <div class="settings-group checkbox-group">
+                            <input type="checkbox" id="transcode-flac-to-ipod" checked />
+                            <label for="transcode-flac-to-ipod">Transcode FLAC files when syncing to iPod</label>
+                        </div>
+
+                        <div class="settings-group" id="transcode-format-group" style="margin-left: 30px;">
+                            <label for="transcode-flac-format">Transcode format:</label>
+                            <select id="transcode-flac-format" style="margin-left: 10px;">
+                                <option value="alac">ALAC (Apple Lossless - no quality loss)</option>
+                                <option value="mp3">MP3 (320kbps - smaller files)</option>
+                            </select>
+                        </div>
+
+                        <!-- Music Actions -->
+                        <div class="settings-actions">
+                            <button id="music-save" class="btn btn-primary">Save</button>
+                            <button class="settings-close-btn btn">Close</button>
+                        </div>
+                    </div>
                 </div>
-                <div class="settings-group-actions">
-                    <button id="music-scan-btn" class="btn btn-small" disabled>Scan Music</button>
-                    <span id="music-scan-status" class="scan-status"></span>
-                </div>
-            </div>
-
-            <div class="settings-group">
-                <label>Podcast Library Path</label>
-                <div class="path-input-row">
-                    <input type="text" id="podcast-path-input" placeholder="/path/to/podcasts" />
-                </div>
-                <div class="settings-group-actions">
-                    <button id="podcast-scan-btn" class="btn btn-small" disabled>Scan Podcasts</button>
-                    <span id="podcast-scan-status" class="scan-status"></span>
-                </div>
-            </div>
-
-            <div class="settings-group">
-                <label>Export Destination</label>
-                <div class="path-input-row">
-                    <input type="text" id="export-path-input" placeholder="./export" />
-                </div>
-                <div class="settings-group-actions">
-                    <button id="export-btn" class="btn btn-small" disabled>Export All Music from iPod</button>
-                    <span id="export-status" class="scan-status"></span>
-                </div>
-            </div>
-
-            <div id="scan-progress-area" class="hidden">
-                <div class="progress-bar-container">
-                    <div id="settings-progress-bar" class="progress-bar"></div>
-                </div>
-                <div id="settings-progress-text"></div>
-            </div>
-
-            <div class="settings-group checkbox-group">
-                <input type="checkbox" id="show-format-tags" />
-                <label for="show-format-tags">Show format tags (MP3, FLAC, etc.)</label>
-            </div>
-
-            <div class="settings-group checkbox-group">
-                <input type="checkbox" id="colorful-albums" />
-                <label for="colorful-albums">Colorful albums</label>
-            </div>
-
-            <div class="settings-group checkbox-group">
-                <input type="checkbox" id="allow-files-without-metadata" />
-                <label for="allow-files-without-metadata">Allow songs without metadata</label>
-            </div>
-
-            <div class="settings-group checkbox-group">
-                <input type="checkbox" id="transcode-flac-to-ipod" checked />
-                <label for="transcode-flac-to-ipod">Transcode FLAC files when syncing to iPod</label>
-            </div>
-
-            <div class="settings-group" id="transcode-format-group" style="margin-left: 30px;">
-                <label for="transcode-flac-format">Transcode format:</label>
-                <select id="transcode-flac-format" style="margin-left: 10px;">
-                    <option value="alac">ALAC (Apple Lossless - no quality loss)</option>
-                    <option value="mp3">MP3 (320kbps - smaller files)</option>
-                </select>
-            </div>
-
-            <div class="settings-group">
-                <label>Theme</label>
-                <select id="theme-select">
-                    <option value="light">Light</option>
-                    <option value="dark">Dark</option>
-                    <option value="auto">Auto (System)</option>
-                </select>
-            </div>
-
-            <div class="settings-group">
-                <label>Accent Color</label>
-                <select id="accent-color-select">
-                    <option value="blue">Blue (Default)</option>
-                    <option value="rainbow">🌈 Rainbow (Animated)</option>
-                    <option value="red">Red</option>
-                    <option value="green">Green</option>
-                    <option value="orange">Orange</option>
-                    <option value="purple">Purple</option>
-                    <option value="cyan">Cyan</option>
-                    <option value="pink">Pink</option>
-                </select>
-            </div>
-
-            <div class="dialog-actions">
-                <button id="settings-save" class="btn btn-primary">Save</button>
-                <button id="settings-close" class="btn">Close</button>
             </div>
         </div>
     </div>
